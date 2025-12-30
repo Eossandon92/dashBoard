@@ -10,21 +10,23 @@ import { Home } from "./pages/Home";
 import { Single } from "./pages/Single";
 import { Demo } from "./pages/Demo";
 import Signin from "./pages/Signin";
+import SignupForm from "./pages/Register";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      {/*SIGNIN (primera pantalla, sin Layout) */}
+      {/* PÚBLICAS */}
       <Route path="/" element={<Signin />} />
+      <Route path="/register" element={<SignupForm />} />
 
-      {/* APP (con Layout) */}
-      <Route path="/app" element={<Layout />} errorElement={<h1>Not found!</h1>}>
+      {/* PRIVADAS */}
+      <Route path="/app" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="single/:theId" element={<Single />} />
         <Route path="demo" element={<Demo />} />
       </Route>
 
-      {/*CUALQUIER RUTA RARA → SIGNIN */}
+      {/* fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </>
   )
