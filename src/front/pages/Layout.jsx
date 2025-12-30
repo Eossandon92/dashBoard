@@ -19,7 +19,6 @@ export const Layout = () => {
                         <Outlet />
                     </main>
 
-                    <Footer />
                 </div>
 
             </div>
