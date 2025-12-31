@@ -32,6 +32,9 @@ export default function Header() {
                 <CCollapse className="header-collapse" visible={visible}>
                     <CHeaderNav>
                         <CNavItem>
+                            UF hoy: $39.720
+                        </CNavItem>
+                        <CNavItem>
                             <CNavLink href="#" active>Home</CNavLink>
                         </CNavItem>
 
