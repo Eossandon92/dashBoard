@@ -1,52 +1,38 @@
-import React, { useEffect } from "react"
-import rigoImageUrl from "../assets/img/rigo-baby.jpg";
-import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 
-export const Home = () => {
+import { div } from "framer-motion/client";
+import CardSuperAdmin from "../components/CardSuperAdmin";
+import KpiCard from "../components/KpiCard";
 
-	const { store, dispatch } = useGlobalReducer()
+const condominios = [
+	{
+		id: 1,
+		nombre: "Condominio Los Álamos",
+		mainValue: 1256,
+		percentageChange: 8.6,
+		benchmarkAverage: 960,
+	},
 
-	const loadMessage = async () => {
-		try {
-			const backendUrl = import.meta.env.VITE_BACKEND_URL
+];
 
-			if (!backendUrl) throw new Error("VITE_BACKEND_URL is not defined in .env file")
 
-			const response = await fetch(backendUrl + "/api/hello")
-			const data = await response.json()
-
-			if (response.ok) dispatch({ type: "set_hello", payload: data.message })
-
-			return data
-
-		} catch (error) {
-			if (error.message) throw new Error(
-				`Could not fetch the message from the backend.
-				Please check if the backend is running and the backend port is public.`
-			);
-		}
-
-	}
-
-	useEffect(() => {
-		loadMessage()
-	}, [])
-
+export function Home() {
 	return (
-		<div className="text-center mt-5">
-			<h1 className="display-4">Hello Rigo!!</h1>
-			<p className="lead">
-				<img src={rigoImageUrl} className="img-fluid rounded-circle mb-3" alt="Rigo Baby" />
-			</p>
-			<div className="alert alert-info">
-				{store.message ? (
-					<span>{store.message}</span>
-				) : (
-					<span className="text-danger">
-						Loading message from the backend (make sure your python 🐍 backend is running)...
-					</span>
-				)}
+		<>
+
+			<div className=" row   mt-5 mb-5 px-8">
+				<div className="col-12 col-sm-6 col-md-5 col-lg-3 mb-5">
+					<KpiCard label="Condominios Activos" value={1} trend="flat" caption="month over month" tone="danger" />
+				</div>
+				<div className="col-12 col-sm-6 col-md-5 col-lg-3 mb-5">
+					<KpiCard label="Active Plans" value={10234} trend="flat" caption="month over month" tone="primary" />
+				</div>
 			</div>
-		</div>
+			<div className="mt-5 mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-20 px-6">
+				{condominios.map((condominio) => (
+					<CardSuperAdmin key={condominio.id} data={condominio} />
+				))}
+
+			</div>
+		</>
 	);
-}; 
+}
