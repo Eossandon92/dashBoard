@@ -18,7 +18,12 @@ def get_condominios():
             "email_contacto": c.email_contacto,
             "telefono_contacto": c.telefono_contacto,
             "estado": c.estado,
-            "created_at": c.created_at.isoformat()
+            "created_at": c.created_at.isoformat(),
+            "administrador_id": c.administrador_id,
+            "administrador_nombre": (
+                f"{c.administrador.first_name} {c.administrador.last_name}"
+                if c.administrador else "Sin asignar"
+            )
         }
         for c in condominios
     ]), 200

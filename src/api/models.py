@@ -44,7 +44,26 @@ class User(db.Model):
         server_default=func.now()
     )
 
-    # Roles: SUPERADMIN | ADMIN | USER
+    # =====================================
+    # CONDOMINIO AL QUE PERTENECE
+    # (ADMIN y USER → uno solo)
+    # SUPERADMIN → puede ser NULL
+    # =====================================
+    condominio_id = db.Column(
+        Integer,
+        ForeignKey("condominios.id"),
+        nullable=True
+    )
+
+    condominio = relationship(
+        "Condominio",
+        back_populates="usuarios",
+        foreign_keys=[condominio_id]
+    )
+
+    # =====================================
+    # ROLES: SUPERADMIN | ADMIN | USER
+    # =====================================
     roles = relationship(
         "Role",
         secondary=user_roles,
@@ -80,7 +99,9 @@ class Condominio(db.Model):
 
     id = db.Column(Integer, primary_key=True)
 
-    # ADMIN asignado (NO superadmin obligatorio)
+    # =====================================
+    # ADMIN DEL CONDOMINIO (USER con rol ADMIN)
+    # =====================================
     administrador_id = db.Column(
         Integer,
         ForeignKey("users.id"),
@@ -89,34 +110,43 @@ class Condominio(db.Model):
 
     administrador = relationship(
         "User",
+        foreign_keys=[administrador_id],
         backref="condominios_admin"
     )
 
-    # Datos principales
+    # =====================================
+    # USUARIOS DEL CONDOMINIO
+    # =====================================
+    usuarios = relationship(
+        "User",
+        back_populates="condominio",
+        foreign_keys="User.condominio_id"
+    )
+
+    # =====================================
+    # DATOS DEL CONDOMINIO
+    # =====================================
     nombre = db.Column(String(150), nullable=False)
     comuna = db.Column(String(100), nullable=False)
     direccion = db.Column(String(200), nullable=False)
 
-    # Estado operativo
     estado = db.Column(
         String(20),
         nullable=False,
         default="Activo"
     )  # Activo | Inactivo | Moroso
 
-    # Métricas
     total_unidades = db.Column(Integer, nullable=False)
 
-    # Contacto
     email_contacto = db.Column(String(120))
     telefono_contacto = db.Column(String(30))
 
-    # Auditoría
     created_at = db.Column(
         DateTime,
         default=datetime.utcnow,
         nullable=False
     )
+
     updated_at = db.Column(
         DateTime,
         default=datetime.utcnow,

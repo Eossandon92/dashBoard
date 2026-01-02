@@ -18,6 +18,7 @@ def get_users():
             "last_name": u.last_name,
             "email": u.email,
             "is_active": u.is_active,
+            "condominio_id": u.condominio_id,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "roles": [r.name for r in u.roles],
         }
@@ -50,6 +51,7 @@ def create_user():
         email=data["email"],
         password=hashed_password,
         is_active=data.get("is_active", True),
+        condominio_id=data.get("condominio_id")
     )
 
     # asignar roles si vienen
@@ -65,7 +67,9 @@ def create_user():
         "first_name": new_user.first_name,
         "last_name": new_user.last_name,
         "email": new_user.email,
-        "is_active": new_user.is_active
+        "is_active": new_user.is_active,
+        "condominio_id": new_user.condominio_id,
+        "roles": [r.name for r in new_user.roles],
     }), 201
 
 
@@ -90,7 +94,10 @@ def update_user(id):
     user.last_name = data.get("last_name", user.last_name)
     user.email = data.get("email", user.email)
     user.is_active = data.get("is_active", user.is_active)
-    user.condominio_id = data.get("condominio_id", user.condominio_id)
+
+    # actualizar condominio
+    if "condominio_id" in data:
+        user.condominio_id = data["condominio_id"]
 
     # actualizar password solo si viene
     if data.get("password"):

@@ -15,7 +15,7 @@ const Signin = () => {
             )
 
             localStorage.setItem("token", res.data.access_token)
-            navigate("/dashboard")
+            navigate("/app")
         } catch (err) {
             throw new Error(
                 err.response?.data?.message || "Invalid credentials"

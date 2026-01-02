@@ -12,6 +12,8 @@ import {
 } from "../../components/ui/table";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 /* ===============================
    COLUMNAS
 ================================ */
@@ -32,6 +34,7 @@ const USER_COLUMNS = [
     { key: "last_name", label: "Apellido" },
     { key: "email", label: "Email" },
     { key: "roles", label: "Roles" },
+    { key: "condominio_id", label: "Condominio" },
     { key: "is_active", label: "Estado" },
 ];
 
@@ -44,6 +47,7 @@ export default function AdminTables() {
     const [data, setData] = useState([]);
     const [roles, setRoles] = useState([]);
     const [admins, setAdmins] = useState([]);
+    const [condominios, setCondominios] = useState([]);
 
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -73,34 +77,49 @@ export default function AdminTables() {
         email: "",
         password: "",
         roles: [],
+        condominio_id: "",
         is_active: true,
     };
 
     /* ===============================
-       FETCH ROLES
+       MAPS
+    ================================ */
+
+    const adminsMap = useMemo(() => {
+        const map = {};
+        admins.forEach((a) => {
+            map[a.id] = `${a.first_name} ${a.last_name}`;
+        });
+        return map;
+    }, [admins]);
+
+    const condominiosMap = useMemo(() => {
+        const map = {};
+        condominios.forEach((c) => {
+            map[c.id] = c.nombre;
+        });
+        return map;
+    }, [condominios]);
+
+    /* ===============================
+       FETCHS
     ================================ */
 
     useEffect(() => {
-        fetch("http://127.0.0.1:5000/api/roles")
+        fetch(`${API_BASE}/api/roles`)
             .then((res) => res.json())
-            .then((data) => setRoles(data));
-    }, []);
+            .then(setRoles);
 
-    /* ===============================
-       FETCH ADMINS
-    ================================ */
-
-    useEffect(() => {
-        fetch("http://127.0.0.1:5000/api/users")
+        fetch(`${API_BASE}/api/users`)
             .then((res) => res.json())
-            .then((users) => {
-                setAdmins(users.filter((u) => u.roles?.includes("ADMIN")));
-            });
-    }, []);
+            .then((users) =>
+                setAdmins(users.filter((u) => u.roles?.includes("Admin")))
+            );
 
-    /* ===============================
-       FETCH DATA
-    ================================ */
+        fetch(`${API_BASE}/api/condominios`)
+            .then((res) => res.json())
+            .then(setCondominios);
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -109,12 +128,12 @@ export default function AdminTables() {
 
         const url =
             activeTable === "condominios"
-                ? "http://127.0.0.1:5000/api/condominios"
-                : "http://127.0.0.1:5000/api/users";
+                ? `${API_BASE}/api/condominios`
+                : `${API_BASE}/api/users`;
 
         fetch(url)
             .then((res) => res.json())
-            .then((json) => setData(json))
+            .then(setData)
             .finally(() => setLoading(false));
 
         setNewRow(activeTable === "condominios" ? emptyCondominio : emptyUser);
@@ -125,8 +144,8 @@ export default function AdminTables() {
 
     const baseUrl =
         activeTable === "condominios"
-            ? "http://127.0.0.1:5000/api/condominios"
-            : "http://127.0.0.1:5000/api/users";
+            ? `${API_BASE}/api/condominios`
+            : `${API_BASE}/api/users`;
 
     /* ===============================
        FILTRO
@@ -146,11 +165,13 @@ export default function AdminTables() {
     ================================ */
 
     const handleSave = async () => {
-        if (
-            activeTable === "condominios" &&
-            !newRow.administrador_id
-        ) {
+        if (activeTable === "condominios" && !newRow.administrador_id) {
             alert("Debe seleccionar un administrador");
+            return;
+        }
+
+        if (activeTable === "users" && !editingId && !newRow.password) {
+            alert("Debe ingresar password");
             return;
         }
 
@@ -160,10 +181,7 @@ export default function AdminTables() {
 
         const payload =
             activeTable === "condominios"
-                ? {
-                    ...newRow,
-                    total_unidades: Number(newRow.total_unidades),
-                }
+                ? { ...newRow, total_unidades: Number(newRow.total_unidades) }
                 : isEdit
                     ? {
                         first_name: newRow.first_name,
@@ -171,8 +189,9 @@ export default function AdminTables() {
                         email: newRow.email,
                         roles: newRow.roles,
                         is_active: newRow.is_active,
+                        condominio_id: newRow.condominio_id,
                     }
-                    : newRow;
+                    : newRow; // incluye password SOLO al crear
 
         await fetch(url, {
             method,
@@ -222,9 +241,7 @@ export default function AdminTables() {
                         setAddingNew(true);
                         setEditingId(null);
                         setNewRow(
-                            activeTable === "condominios"
-                                ? emptyCondominio
-                                : emptyUser
+                            activeTable === "condominios" ? emptyCondominio : emptyUser
                         );
                     }}
                 >
@@ -257,108 +274,128 @@ export default function AdminTables() {
 
                     <TableBody>
                         {addingNew && (
-                            <TableRow className="bg-muted/40">
-                                {columns.map((col) => (
-                                    <TableCell key={col.key}>
-                                        {col.key === "administrador_id" ? (
-                                            <select
-                                                className="w-full rounded-md border px-2 py-1"
-                                                value={newRow.administrador_id}
-                                                onChange={(e) =>
-                                                    setNewRow({
-                                                        ...newRow,
-                                                        administrador_id: Number(
-                                                            e.target.value
-                                                        ),
-                                                    })
-                                                }
-                                            >
-                                                <option value="">
-                                                    Seleccione administrador
-                                                </option>
-                                                {admins.map((admin) => (
-                                                    <option
-                                                        key={admin.id}
-                                                        value={admin.id}
-                                                    >
-                                                        {admin.first_name}{" "}
-                                                        {admin.last_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "roles" ? (
-                                            <select
-                                                multiple
-                                                className="w-full min-h-[90px] rounded-md border px-2 py-1"
-                                                value={newRow.roles}
-                                                onChange={(e) =>
-                                                    setNewRow({
-                                                        ...newRow,
-                                                        roles: Array.from(
-                                                            e.target
-                                                                .selectedOptions,
-                                                            (o) => o.value
-                                                        ),
-                                                    })
-                                                }
-                                            >
-                                                {roles.map((role) => (
-                                                    <option
-                                                        key={role.id}
-                                                        value={role.name}
-                                                    >
-                                                        {role.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "is_active" ? (
-                                            <select
-                                                className="w-full rounded-md border px-2 py-1"
-                                                value={newRow.is_active}
-                                                onChange={(e) =>
-                                                    setNewRow({
-                                                        ...newRow,
-                                                        is_active:
-                                                            e.target.value ===
-                                                            "true",
-                                                    })
-                                                }
-                                            >
-                                                <option value="true">
-                                                    Activo
-                                                </option>
-                                                <option value="false">
-                                                    Inactivo
-                                                </option>
-                                            </select>
-                                        ) : (
+                            <>
+                                <TableRow className="bg-muted/40">
+                                    {columns.map((col) => (
+                                        <TableCell key={col.key}>
+                                            {col.key === "administrador_id" ? (
+                                                <select
+                                                    className="w-full rounded-md border px-2 py-1"
+                                                    value={newRow.administrador_id}
+                                                    onChange={(e) =>
+                                                        setNewRow({
+                                                            ...newRow,
+                                                            administrador_id: Number(e.target.value),
+                                                        })
+                                                    }
+                                                >
+                                                    <option value="">Seleccione administrador</option>
+                                                    {admins.map((a) => (
+                                                        <option key={a.id} value={a.id}>
+                                                            {a.first_name} {a.last_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "roles" ? (
+                                                <select
+                                                    className="w-full rounded-md border px-2 py-1"
+                                                    value={newRow.roles[0] || ""}
+                                                    onChange={(e) =>
+                                                        setNewRow({
+                                                            ...newRow,
+                                                            roles: e.target.value ? [e.target.value] : [],
+                                                        })
+                                                    }
+                                                >
+                                                    <option value="">Seleccione rol</option>
+                                                    {roles.map((r) => (
+                                                        <option key={r.id} value={r.name}>
+                                                            {r.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "condominio_id" ? (
+                                                <select
+                                                    className="w-full rounded-md border px-2 py-1"
+                                                    value={newRow.condominio_id}
+                                                    onChange={(e) =>
+                                                        setNewRow({
+                                                            ...newRow,
+                                                            condominio_id: Number(e.target.value),
+                                                        })
+                                                    }
+                                                >
+                                                    <option value="">Seleccione condominio</option>
+                                                    {condominios.map((c) => (
+                                                        <option key={c.id} value={c.id}>
+                                                            {c.nombre}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "is_active" ? (
+                                                <select
+                                                    className="w-full rounded-md border px-2 py-1"
+                                                    value={newRow.is_active}
+                                                    onChange={(e) =>
+                                                        setNewRow({
+                                                            ...newRow,
+                                                            is_active: e.target.value === "true",
+                                                        })
+                                                    }
+                                                >
+                                                    <option value="true">Activo</option>
+                                                    <option value="false">Inactivo</option>
+                                                </select>
+                                            ) : (
+                                                <Input
+                                                    value={newRow[col.key] ?? ""}
+                                                    onChange={(e) =>
+                                                        setNewRow({
+                                                            ...newRow,
+                                                            [col.key]: e.target.value,
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                    <TableCell />
+                                </TableRow>
+
+                                {activeTable === "users" && !editingId && (
+                                    <TableRow className="bg-muted/40">
+                                        <TableCell colSpan={columns.length + 1}>
                                             <Input
-                                                value={newRow[col.key] ?? ""}
+                                                type="password"
+                                                placeholder="Password"
+                                                value={newRow.password}
                                                 onChange={(e) =>
                                                     setNewRow({
                                                         ...newRow,
-                                                        [col.key]:
-                                                            e.target.value,
+                                                        password: e.target.value,
                                                     })
                                                 }
                                             />
-                                        )}
-                                    </TableCell>
-                                ))}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
 
-                                <TableCell className="flex justify-end gap-2">
-                                    <Button size="sm" onClick={handleSave}>
-                                        Guardar
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setAddingNew(false)}
-                                    >
-                                        Cancelar
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
+                                <TableRow className="bg-muted/40">
+                                    <TableCell colSpan={columns.length + 1} className="text-right">
+                                        <Button size="sm" onClick={handleSave}>
+                                            Guardar
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="ml-2"
+                                            onClick={() => setAddingNew(false)}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </>
                         )}
 
                         {filteredData.map((row) => (
@@ -367,23 +404,23 @@ export default function AdminTables() {
                                     <TableCell key={col.key}>
                                         {col.key === "roles"
                                             ? row.roles?.join(", ")
-                                            : col.key === "is_active"
-                                                ? (
-                                                    <Badge
-                                                        variant={
-                                                            row.is_active
-                                                                ? "default"
-                                                                : "destructive"
-                                                        }
-                                                    >
-                                                        {row.is_active
-                                                            ? "Activo"
-                                                            : "Inactivo"}
-                                                    </Badge>
-                                                )
-                                                : col.key === "estado"
-                                                    ? <Badge>{row.estado}</Badge>
-                                                    : row[col.key] ?? "-"}
+                                            : col.key === "condominio_id"
+                                                ? condominiosMap[row.condominio_id] || "Sin asignar"
+                                                : col.key === "administrador_id"
+                                                    ? adminsMap[row.administrador_id] || "-"
+                                                    : col.key === "is_active"
+                                                        ? (
+                                                            <Badge
+                                                                variant={
+                                                                    row.is_active ? "default" : "destructive"
+                                                                }
+                                                            >
+                                                                {row.is_active ? "Activo" : "Inactivo"}
+                                                            </Badge>
+                                                        )
+                                                        : col.key === "estado"
+                                                            ? <Badge>{row.estado}</Badge>
+                                                            : row[col.key] ?? "-"}
                                     </TableCell>
                                 ))}
 
@@ -403,9 +440,7 @@ export default function AdminTables() {
                                     <Button
                                         size="icon"
                                         variant="ghost"
-                                        onClick={() =>
-                                            handleDelete(row.id)
-                                        }
+                                        onClick={() => handleDelete(row.id)}
                                     >
                                         <Trash2 className="size-4" />
                                     </Button>

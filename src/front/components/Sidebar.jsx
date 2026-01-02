@@ -13,7 +13,7 @@ export const Sidebar = () => {
 
                 <li className="nav-item">
                     <NavLink
-                        to="/admin-panel"
+                        to="/app/admin-panel"
                         className={({ isActive }) =>
                             `nav-link ${isActive ? "active" : ""}`
                         }
