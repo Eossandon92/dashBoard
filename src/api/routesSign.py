@@ -50,8 +50,6 @@ def login():
     if not check_password_hash(user.password, password):
         return jsonify({"message": "Invalid credentials"}), 401
 
-    if user.status.value != "Activo":
-        return jsonify({"message": "Account not active"}), 403
 
     token = create_access_token(identity=str(user.id))
 

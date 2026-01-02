@@ -8,9 +8,12 @@ from flask_cors import CORS
 from api.utils import APIException, generate_sitemap
 from api.models import db
 from api.routesSign import signin_api
-from api.routesRegister import register_api
+from api.routesCondominio import condominios_bp
 from api.admin import setup_admin
 from api.commands import setup_commands
+from api.routesUser import users_bp
+from flask_jwt_extended import JWTManager
+from api.routesRoles import roles_bp
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 
@@ -20,6 +23,7 @@ static_file_dir = os.path.join(
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+jwt = JWTManager(app)
 
 # --------------------
 # Database config
@@ -64,7 +68,9 @@ CORS(
 # Blueprints (API)
 # --------------------
 app.register_blueprint(signin_api, url_prefix="/api")
-app.register_blueprint(register_api, url_prefix="/api")
+app.register_blueprint(condominios_bp, url_prefix="/api")
+app.register_blueprint(users_bp, url_prefix="/api")
+app.register_blueprint(roles_bp, url_prefix="/api")
 
 # --------------------
 # Error handling
