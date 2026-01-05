@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import {
     CHeader,
     CContainer,
@@ -13,14 +14,48 @@ import {
     CDropdownToggle,
     CDropdownMenu,
     CDropdownItem,
-    CDropdownDivider,
-    CForm,
-    CFormInput,
-    CButton
+    CDropdownDivider
 } from "@coreui/react"
+const backendUrl = import.meta.env.VITE_BACKEND_URL
 
 export default function Header() {
     const [visible, setVisible] = useState(true)
+    const [uf, setUf] = useState(null)
+    const navigate = useNavigate()
+    const handleLogout = () => {
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+        navigate("/signin")
+    }
+
+    useEffect(() => {
+        const hoy = new Date().toISOString().split("T")[0]
+        const ufGuardada = localStorage.getItem("uf")
+
+        if (ufGuardada) {
+            const parsed = JSON.parse(ufGuardada)
+
+            if (parsed.fecha === hoy) {
+                setUf(parsed.valor)
+                return
+            }
+        }
+
+        fetch(`${backendUrl}/api/uf`)
+            .then(res => res.json())
+            .then(data => {
+                setUf(data.valorUF)
+
+                localStorage.setItem("uf", JSON.stringify({
+                    valor: data.valorUF,
+                    fecha: hoy
+                }))
+            })
+            .catch(err => {
+                console.error("Error cargando UF", err)
+            })
+
+    }, [])
 
     return (
         <CHeader>
@@ -31,32 +66,48 @@ export default function Header() {
 
                 <CCollapse className="header-collapse" visible={visible}>
                     <CHeaderNav>
-                        <CNavItem>
-                            UF hoy: $39.720
-                        </CNavItem>
-                        <CNavItem>
-                            <CNavLink href="#" active>Home</CNavLink>
+
+                        <CNavItem className="me-3">
+                            <CNavLink href="#" onClick={(e) => e.preventDefault()} style={{ cursor: "default" }}>
+                                <strong>
+                                    UF hoy:{" "}
+                                    {uf
+                                        ? `$${uf.toLocaleString("es-CL")}`
+                                        : "Cargando..."}
+                                </strong>
+                            </CNavLink>
                         </CNavItem>
 
                         <CNavItem>
-                            <CNavLink href="#">Link</CNavLink>
+                            <Link to="/app" style={{ textDecoration: "none" }}>
+                                <CNavLink active>Home</CNavLink>
+                            </Link>
                         </CNavItem>
+
 
                         <CDropdown variant="nav-item">
                             <CDropdownToggle color="secondary">
-                                Dropdown button
+                                Menú
                             </CDropdownToggle>
                             <CDropdownMenu>
-                                <CDropdownItem href="#">Action</CDropdownItem>
-                                <CDropdownItem href="#">Another action</CDropdownItem>
+                                <CDropdownItem>Perfil</CDropdownItem>
                                 <CDropdownDivider />
-                                <CDropdownItem href="#">Something else here</CDropdownItem>
+                                <CDropdownItem
+                                    component={Link}
+                                    to="/signin"
+                                    onClick={handleLogout}
+                                >
+                                    Cerrar sesión
+                                </CDropdownItem>
+
+
                             </CDropdownMenu>
                         </CDropdown>
 
                         <CNavItem>
-                            <Link to="/signin">Link</Link>
+
                         </CNavItem>
+
                     </CHeaderNav>
                 </CCollapse>
             </CContainer>

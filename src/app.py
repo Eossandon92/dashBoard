@@ -12,6 +12,7 @@ from api.routesCondominio import condominios_bp
 from api.admin import setup_admin
 from api.commands import setup_commands
 from api.routesUser import users_bp
+from api.routesUF import uf_bp
 from flask_jwt_extended import JWTManager
 from api.routesRoles import roles_bp
 
@@ -71,6 +72,7 @@ app.register_blueprint(signin_api, url_prefix="/api")
 app.register_blueprint(condominios_bp, url_prefix="/api")
 app.register_blueprint(users_bp, url_prefix="/api")
 app.register_blueprint(roles_bp, url_prefix="/api")
+app.register_blueprint(uf_bp, url_prefix="/api")
 
 # --------------------
 # Error handling
