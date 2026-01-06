@@ -39,18 +39,19 @@ def login():
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
-    if not email or not password:
-        return jsonify({"message": "Email and password required"}), 400
-
     user = User.query.filter_by(email=email).first()
 
-    if not user:
+    if not user or not check_password_hash(user.password, password):
         return jsonify({"message": "Invalid credentials"}), 401
-
-    if not check_password_hash(user.password, password):
-        return jsonify({"message": "Invalid credentials"}), 401
-
 
     token = create_access_token(identity=str(user.id))
 
-    return jsonify({"access_token": token}), 200
+    return jsonify({
+        "access_token": token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "condominium_id": user.condominio_id,
+            "roles": [r.name for r in user.roles]
+        }
+    }), 200

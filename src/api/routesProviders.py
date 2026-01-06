@@ -24,7 +24,7 @@ def get_providers():
     ]), 200
 
 # ============================
-# UPDATE CONDOMINIO
+# UPDATE PROVIDER
 # ============================
 @providers_bp.route("/providers/<int:id>", methods=["PUT"])
 def update_provider(id):
@@ -49,7 +49,7 @@ def update_provider(id):
 
 
 # ============================
-# DELETE CONDOMINIO
+# DELETE PROVIDER
 # ============================
 @providers_bp.route("/providers/<int:id>", methods=["DELETE"])
 def delete_provider(id):

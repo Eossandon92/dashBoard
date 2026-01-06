@@ -7,7 +7,8 @@ from sqlalchemy import (
     ForeignKey,
     Table,
     Column,
-    Integer
+    Integer,
+    Text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -218,10 +219,11 @@ class Expense(db.Model):
     )
 
     expense_date = db.Column(db.Date, nullable=False)
-    description = db.Column(db.String(255))
+
+    observation = db.Column(Text, nullable=True)
+
     amount = db.Column(db.Numeric(10, 2), nullable=False)
 
-    payment_method = db.Column(db.String(50))
     document_number = db.Column(db.String(100))
 
     is_recurring = db.Column(db.Boolean, default=False)
