@@ -38,6 +38,17 @@ const USER_COLUMNS = [
     { key: "is_active", label: "Estado" },
 ];
 
+
+const PROVIDER_COLUMNS = [
+    { key: "name", label: "Nombre" },
+    { key: "service_type", label: "Tipo de Servicio" },
+    { key: "rut", label: "RUT" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Teléfono" },
+    { key: "address", label: "Dirección" },
+    { key: "notes", label: "Notas" },
+    { key: "is_active", label: "Estado" },
+];
 /* ===============================
    COMPONENTE
 ================================ */
@@ -48,6 +59,7 @@ export default function AdminTables() {
     const [roles, setRoles] = useState([]);
     const [admins, setAdmins] = useState([]);
     const [condominios, setCondominios] = useState([]);
+    const [providers, setProviders] = useState([]);
 
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -80,6 +92,16 @@ export default function AdminTables() {
         condominio_id: "",
         is_active: true,
     };
+    const emptyProvider = {
+        name: "",
+        service_type: "",
+        rut: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+        is_active: true,
+    };
 
     /* ===============================
        MAPS
@@ -101,6 +123,14 @@ export default function AdminTables() {
         return map;
     }, [condominios]);
 
+    const providersMap = useMemo(() => {
+        const map = {};
+        providers.forEach((p) => {
+            map[p.id] = p.name;
+        });
+        return map;
+    }, [providers]);
+
     /* ===============================
        FETCHS
     ================================ */
@@ -119,6 +149,10 @@ export default function AdminTables() {
         fetch(`${API_BASE}/api/condominios`)
             .then((res) => res.json())
             .then(setCondominios);
+
+        fetch(`${API_BASE}/api/providers`)
+            .then((res) => res.json())
+            .then(setProviders);
     }, []);
 
     useEffect(() => {
@@ -129,23 +163,37 @@ export default function AdminTables() {
         const url =
             activeTable === "condominios"
                 ? `${API_BASE}/api/condominios`
-                : `${API_BASE}/api/users`;
+                : activeTable === "providers"
+                    ? `${API_BASE}/api/providers`
+                    : `${API_BASE}/api/users`;
 
         fetch(url)
             .then((res) => res.json())
             .then(setData)
             .finally(() => setLoading(false));
 
-        setNewRow(activeTable === "condominios" ? emptyCondominio : emptyUser);
+        setNewRow(
+            activeTable === "condominios"
+                ? emptyCondominio
+                : activeTable === "providers"
+                    ? emptyProvider
+                    : emptyUser
+        );
     }, [activeTable]);
 
     const columns =
-        activeTable === "condominios" ? CONDOMINIO_COLUMNS : USER_COLUMNS;
+        activeTable === "condominios"
+            ? CONDOMINIO_COLUMNS
+            : activeTable === "providers"
+                ? PROVIDER_COLUMNS
+                : USER_COLUMNS;
 
     const baseUrl =
         activeTable === "condominios"
             ? `${API_BASE}/api/condominios`
-            : `${API_BASE}/api/users`;
+            : activeTable === "providers"
+                ? `${API_BASE}/api/providers`
+                : `${API_BASE}/api/users`;
 
     /* ===============================
        FILTRO
@@ -172,6 +220,11 @@ export default function AdminTables() {
 
         if (activeTable === "users" && !editingId && !newRow.password) {
             alert("Debe ingresar password");
+            return;
+        }
+
+        if (activeTable === "providers" && !editingId && !newRow.name) {
+            alert("Debe ingresar nombre");
             return;
         }
 
@@ -233,6 +286,13 @@ export default function AdminTables() {
                     onClick={() => setActiveTable("users")}
                 >
                     Usuarios
+                </Button>
+
+                <Button
+                    variant={activeTable === "providers" ? "default" : "outline"}
+                    onClick={() => setActiveTable("providers")}
+                >
+                    Proveedores
                 </Button>
 
                 <Button

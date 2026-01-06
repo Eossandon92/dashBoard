@@ -12,6 +12,7 @@ import { Demo } from "./pages/Demo";
 import Signin from "./pages/Signin";
 import AdminPanel from "./pages/AdminPanel";
 import { PrivateRoute } from "./PrivateRoute";
+import VignettePurchaseFormDemo from "./pages/Expense";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -26,6 +27,7 @@ export const router = createBrowserRouter(
           <Route path="single/:theId" element={<Single />} />
           <Route path="demo" element={<Demo />} />
           <Route path="admin-panel" element={<AdminPanel />} />
+          <Route path="expense" element={<VignettePurchaseFormDemo />} />
         </Route>
       </Route>
 

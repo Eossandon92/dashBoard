@@ -9,7 +9,6 @@ export const Sidebar = () => {
             </div>
 
             <ul className="sidebar-nav">
-                <li className="nav-title">Nav Title</li>
 
                 <li className="nav-item">
                     <NavLink
@@ -18,16 +17,22 @@ export const Sidebar = () => {
                             `nav-link ${isActive ? "active" : ""}`
                         }
                     >
-                        <i className="nav-icon cil-speedometer"></i>
+                        <i className="nav-icon cil-puzzle"></i>
                         Panel Administrador
                     </NavLink>
                 </li>
 
                 <li className="nav-item">
-                    <NavLink to="/dashboard" className="nav-link">
+                    <NavLink to="/app" className="nav-link">
                         <i className="nav-icon cil-speedometer"></i>
-                        With badge
-                        <span className="badge bg-primary ms-auto">NEW</span>
+                        Dashboard
+                    </NavLink>
+                </li>
+
+                <li className="nav-item">
+                    <NavLink to="/app/expense" className="nav-link">
+                        <i className="nav-icon cil-money"></i>
+                        Gastos
                     </NavLink>
                 </li>
 

@@ -6,6 +6,7 @@
 .sidebar {
 position: static  !important;
 height: 100vh !important;
+transition: all .5s ease-in-out !important;
 }
 
 @theme inline {

@@ -15,6 +15,7 @@ from api.routesUser import users_bp
 from api.routesUF import uf_bp
 from flask_jwt_extended import JWTManager
 from api.routesRoles import roles_bp
+from api.routesProviders import providers_bp
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 
@@ -73,6 +74,7 @@ app.register_blueprint(condominios_bp, url_prefix="/api")
 app.register_blueprint(users_bp, url_prefix="/api")
 app.register_blueprint(roles_bp, url_prefix="/api")
 app.register_blueprint(uf_bp, url_prefix="/api")
+app.register_blueprint(providers_bp, url_prefix="/api")
 
 # --------------------
 # Error handling

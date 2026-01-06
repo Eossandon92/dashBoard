@@ -156,3 +156,116 @@ class Condominio(db.Model):
 
     def __repr__(self):
         return f"<Condominio {self.nombre}>"
+
+class Provider(db.Model):
+    __tablename__ = "providers"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.String(120), nullable=False)
+    service_type = db.Column(db.String(80), nullable=False)
+
+    rut = db.Column(db.String(20), unique=True, nullable=True)
+    email = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(30), nullable=True)
+    address = db.Column(db.String(200), nullable=True)
+
+    notes = db.Column(db.Text, nullable=True)
+
+    is_active = db.Column(db.Boolean, default=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "service_type": self.service_type,
+            "rut": self.rut,
+            "email": self.email,
+            "phone": self.phone,
+            "address": self.address,
+            "notes": self.notes,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat()
+        }
+
+class ExpenseCategory(db.Model):
+    __tablename__ = "expense_categories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))
+    is_active = db.Column(db.Boolean, default=True)
+
+class Expense(db.Model):
+    __tablename__ = "expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    provider_id = db.Column(
+        db.Integer,
+        db.ForeignKey("providers.id"),
+        nullable=False
+    )
+
+    condominium_id = db.Column(db.Integer, nullable=False)
+
+    category_id = db.Column(
+        db.Integer,
+        db.ForeignKey("expense_categories.id"),
+        nullable=False
+    )
+
+    expense_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(255))
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+
+    payment_method = db.Column(db.String(50))
+    document_number = db.Column(db.String(100))
+
+    is_recurring = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(50), default="registered")
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now(),
+        onupdate=db.func.now()
+    )
+
+    provider = db.relationship("Provider")
+    category = db.relationship("ExpenseCategory")
+
+
+
+class ExpenseDocument(db.Model):
+    __tablename__ = "expense_documents"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    expense_id = db.Column(
+        db.Integer,
+        db.ForeignKey("expenses.id"),
+        nullable=False
+    )
+
+    document_type = db.Column(db.String(50))  # invoice, receipt, quote
+    file_path = db.Column(db.String(255), nullable=False)
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    expense = db.relationship("Expense")
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+
+    action = db.Column(db.String(100), nullable=False)
+    entity = db.Column(db.String(50), nullable=False)
+    entity_id = db.Column(db.Integer, nullable=False)
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
