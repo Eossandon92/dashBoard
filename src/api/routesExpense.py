@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from api.models import db, User, Role, ExpenseCategory, Expense
+from datetime import date
 
 expenses_bp = Blueprint("expenses_bp", __name__)
 
@@ -27,23 +28,74 @@ def get_expenses_category():
 # ============================
 @expenses_bp.route("/expenses", methods=["GET"])
 def get_expenses():
-    expenses = Expense.query.order_by(Expense.created_at.desc()).all()
+    expenses = Expense.query.order_by(Expense.expense_date.desc()).all()
 
     return jsonify([
         {   
             "id": e.id,
             "provider_id": e.provider_id,
             "category_id": e.category_id,
+            "condominium_id": e.condominium_id,
             "amount": e.amount,
-            "description": e.description,
-            "date": e.date,
-            "payment_method": e.payment_method,
+            "description": e.observation,
+            "date": e.expense_date,
+            "document_number": e.document_number,
             "status": e.status,
             "created_at": e.created_at.isoformat() if e.created_at else None,
-            "roles": [r.name for r in u.roles],
         }
         for e in expenses
     ]), 200
+
+# ============================
+# GET ALL EXPENSES MONTHLY
+# ============================
+@expenses_bp.route("/expenses/monthly", methods=["GET"])
+def get_expenses_monthly():
+    condominium_id = request.args.get("condominium_id", type=int)
+    month = request.args.get("month", type=int)
+    year = request.args.get("year", type=int)
+
+    today = date.today()
+
+    if not month:
+        month = today.month
+    if not year:
+        year = today.year
+
+    start = date(year, month, 1)
+
+    if month == 12:
+        end = date(year + 1, 1, 1)
+    else:
+        end = date(year, month + 1, 1)
+
+    print("START:", start)
+    print("END:", end)
+
+    expenses = Expense.query.filter(
+        Expense.condominium_id == condominium_id,
+        Expense.expense_date >= start,
+        Expense.expense_date < end
+    ).all()
+
+    return jsonify({
+    "month": month,
+    "year": year,
+    "total_amount": sum(e.amount for e in expenses),
+    "count": len(expenses),
+    "expenses": [
+        {
+            "id": e.id,
+            "expense_date": e.expense_date.isoformat(),
+            "amount": e.amount,
+            "category_id": e.category_id,
+            "provider_id": e.provider_id,
+            "document_number": e.document_number,
+            "observation": e.observation,
+        }
+        for e in expenses
+    ]
+}), 200
 
 
 # ============================
