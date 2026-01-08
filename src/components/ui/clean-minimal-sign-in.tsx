@@ -1,6 +1,7 @@
 import * as React from "react"
 import { useState } from "react"
 import { LogIn, Lock, Mail } from "lucide-react"
+import { Button } from "./button"
 
 const SignIn2 = ({ onSubmit, className, style }) => {
   const [email, setEmail] = useState("")
@@ -36,18 +37,13 @@ const SignIn2 = ({ onSubmit, className, style }) => {
   return (
     <div className={`min-h-screen w-full flex items-center justify-center bg-white rounded-xl z-1 ${className || ''}`} style={style}>
       <div className="w-full max-w-sm bg-gradient-to-b from-sky-50/50 to-white rounded-3xl shadow-xl p-8 flex flex-col items-center border border-blue-100 text-black">
-
-        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white mb-6 shadow-lg">
-          <LogIn className="w-7 h-7 text-black" />
+        <div className="mb-2">
+          <img src="https://res.cloudinary.com/dnkalrt1u/image/upload/v1767886622/logo_gestora_signin_hcknws.png" alt="" />
         </div>
 
-        <h2 className="text-2xl font-semibold mb-2 text-center">
-          Sign in with email
-        </h2>
 
         <p className="text-gray-500 text-sm mb-6 text-center">
-          Make a new doc to bring your words, data, and teams together. For free
-        </p>
+          Gestora reúne la administración, la información y los equipos de tu condominio en un solo lugar.”        </p>
 
         <div className="w-full flex flex-col gap-3 mb-2">
           <div className="relative">
@@ -81,13 +77,25 @@ const SignIn2 = ({ onSubmit, className, style }) => {
           )}
         </div>
 
-        <button
+        <Button
           onClick={handleSignIn}
           disabled={loading}
-          className="w-full bg-gradient-to-b from-gray-700 to-gray-900 text-white font-medium py-2 rounded-xl shadow hover:brightness-105 transition mt-4 disabled:opacity-50"
+          className="
+                  w-full
+                  bg-gradient-to-b from-gray-800 to-gray-950
+                  text-white font-semibold
+                  py-2.5
+                  !rounded-full
+                  shadow-lg shadow-black/30
+                  hover:brightness-110 hover:shadow-xl
+                  active:scale-[0.98] 
+                  transition-all duration-200
+                  mt-4
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
         >
-          {loading ? "Signing in..." : "Iniciar sesión"}
-        </button>
+          {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+        </Button>
       </div>
     </div>
   )

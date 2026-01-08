@@ -15,20 +15,6 @@ signin_api = Blueprint("signin_api", __name__)
 # Allow CORS requests to this API
 CORS(signin_api)
 
-
-@signin_api.route('/hello', methods=['POST', 'GET'])
-def handle_hello():
-
-    response_body = {
-        "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
-    }
-
-    return jsonify(response_body), 200
-
-@signin_api.route('/health-check', methods=['GET'])
-def health_check():
-    return jsonify({"status": "OK"}), 200
-
 @signin_api.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True)
@@ -42,7 +28,7 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if not user or not check_password_hash(user.password, password):
-        return jsonify({"message": "Invalid credentials"}), 401
+        return jsonify({"message": "Credenciales inválidas"}), 401
 
     token = create_access_token(identity=str(user.id))
 

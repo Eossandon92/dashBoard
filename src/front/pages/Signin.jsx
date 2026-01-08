@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext"
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 
-import BackgroundSignIn from "../assets/img/BackgroundSignIn.png"
 
 const Signin = () => {
     const navigate = useNavigate()
@@ -44,7 +43,7 @@ const Signin = () => {
         <SignIn2
             onSubmit={handleLogin}
             style={{
-                backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05)), url(${BackgroundSignIn})`,
+                backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05)), url("https://res.cloudinary.com/dnkalrt1u/image/upload/v1767882973/BackgroundSignIn_k9lro8.png")`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
             }}

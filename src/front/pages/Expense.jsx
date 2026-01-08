@@ -71,6 +71,7 @@ const Expense = () => {
     const [observation, setObservation] = useState("");
     const [currentMonthTotal, setCurrentMonthTotal] = useState(0);
     const [previousMonthTotal, setPreviousMonthTotal] = useState(0);
+    const [refreshExpenses, setRefreshExpenses] = useState(0);
 
 
     const { user } = useAuth()
@@ -110,6 +111,7 @@ const Expense = () => {
             console.log("Gasto creado:", response.data)
             alert("Gasto registrado exitosamente!")
             resetForm()
+            setRefreshExpenses((prev) => prev + 1);
         } catch (error) {
             console.error("Error:", error.response?.data || error)
             alert("No se pudo registrar el gasto")
@@ -174,24 +176,45 @@ const Expense = () => {
     useEffect(() => {
         if (!user?.condominium_id) return;
 
-        axios
-            .get(`${backendUrl}/api/expenses/monthly`, {
-                params: {
-                    condominium_id: user.condominium_id,
-                    month: month,
-                    year: year,
-                },
-            })
-            .then((res) => {
-                setMonthlyExpenses(res.data.total_amount);
-                console.log(monthlyExpenses)
-            })
-            .catch((err) => {
-                console.error("Error cargando gastos mensuales", err);
-            });
-    }, [user, month, year]);
+        const fetchTotals = async () => {
+            try {
+                const [currentRes, previousRes] = await Promise.all([
+                    axios.get(`${backendUrl}/api/expenses/monthly`, {
+                        params: {
+                            condominium_id: user.condominium_id,
+                            month,
+                            year,
+                        },
+                    }),
+                    axios.get(`${backendUrl}/api/expenses/monthly`, {
+                        params: {
+                            condominium_id: user.condominium_id,
+                            month: previousMonth,
+                            year: previousYear,
+                        },
+                    }),
+                ]);
+
+                setCurrentMonthTotal(currentRes.data.total_amount);
+                setPreviousMonthTotal(previousRes.data.total_amount);
+            } catch (err) {
+                console.error("Error cargando totales", err);
+            }
+        };
+
+        fetchTotals();
+    }, [
+        user?.condominium_id,
+        month,
+        year,
+        previousMonth,
+        previousYear,
+        refreshExpenses,
+    ]);
 
 
+    const tone =
+        previousMonthTotal > currentMonthTotal ? "danger" : "success";
 
     return (
         <>
@@ -218,7 +241,7 @@ const Expense = () => {
                                     </div>
                                     <Select value={provider} onValueChange={setProvider}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Selecciona un proveedor" />
+                                            <SelectValue placeholder="Proveedor" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {providers.map((provider) => (
@@ -236,7 +259,7 @@ const Expense = () => {
                                     </div>
                                     <Select value={category} onValueChange={setCategory}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Selecciona un tipo de gasto" />
+                                            <SelectValue placeholder="Tipo de gasto" />
                                         </SelectTrigger>
 
                                         <SelectContent>
@@ -355,7 +378,13 @@ const Expense = () => {
 
 
                 <div className="col-12 col-sm-6 col-md-5 col-lg-2 mb-5 p-6 ms-5">
-                    <KpiCard label="📊  Comparativo de Gastos" value={`Mes ${month}`} trend="flat" caption={monthlyExpenses} tone="default" />
+                    <KpiCard
+                        key={`${currentMonthTotal}-${previousMonthTotal}`}
+                        label="📊  Comparativo de Gastos"
+                        value={`Mes Actual ${formatCLP(currentMonthTotal)}`}
+                        trend="flat"
+                        caption={`Mes Anterior ${formatCLP(previousMonthTotal)}`}
+                        tone={tone} />
                 </div>
 
 
