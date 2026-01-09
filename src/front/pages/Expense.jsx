@@ -5,6 +5,9 @@ import {
     Globe,
     Info,
     X,
+    Pencil,
+    Trash2,
+    Plus,
 } from "lucide-react";
 import * as React from "react";
 
@@ -26,6 +29,16 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "../../components/ui/tooltip";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "../../components/ui/table";
 import axios from "axios";
 import { KpiCard } from "../../components/ui/kpi-card";
 import { useAuth } from "../../context/AuthContext";
@@ -36,6 +49,22 @@ const month = now.getMonth() + 1;
 const year = now.getFullYear();
 const getTodayISO = () => new Date().toISOString().split("T")[0];
 
+
+
+/* ===============================
+   COLUMNAS
+================================ */
+
+const EXPENSE_COLUMNS = [
+    { key: "provider", label: "Proveedor" },
+    { key: "category", label: "Categoría" },
+    { key: "amount", label: "Monto" },
+    { key: "date", label: "Fecha" },
+    { key: "observation", label: "Observación" },
+    { key: "files", label: "Archivos" },
+    { key: "administrador_id", label: "Administrador" },
+    { key: "estado", label: "Estado" },
+];
 
 
 /* -----------------------------
@@ -72,6 +101,8 @@ const Expense = () => {
     const [currentMonthTotal, setCurrentMonthTotal] = useState(0);
     const [previousMonthTotal, setPreviousMonthTotal] = useState(0);
     const [refreshExpenses, setRefreshExpenses] = useState(0);
+    const [activeTable, setActiveTable] = useState("Gastos");
+    const [search, setSearch] = useState("");
 
 
     const { user } = useAuth()
@@ -212,13 +243,27 @@ const Expense = () => {
         refreshExpenses,
     ]);
 
+    const current = Number(currentMonthTotal) || 0;
+    const previous = Number(previousMonthTotal) || 0;
+    let tone = "success";
 
-    const tone =
-        previousMonthTotal > currentMonthTotal ? "danger" : "success";
+    if (current > previous) {
+        tone = "warning";
+    }
+
+    if (current > previous * 1.3) {
+        tone = "danger";
+    }
+    const trend =
+        currentMonthTotal > previousMonthTotal
+            ? "up"
+            : currentMonthTotal < previousMonthTotal
+                ? "down"
+                : "flat";
 
     return (
         <>
-            <div className=" row   mt-5 mb-5 px-8 border border-danger">
+            <div className=" row w-full border border-danger">
                 <div className="col-6 flex w-full justify-center p-6">
                     <MultiStepForm
                         title="Registro de Gasto"
@@ -377,14 +422,46 @@ const Expense = () => {
                 </div>
 
 
-                <div className="col-12 col-sm-6 col-md-5 col-lg-2 mb-5 p-6 ms-5">
+                <div className="col-12 col-sm-6 col-md-5 col-lg-6 mb-5 p-6 w-full ">
                     <KpiCard
-                        key={`${currentMonthTotal}-${previousMonthTotal}`}
                         label="📊  Comparativo de Gastos"
                         value={`Mes Actual ${formatCLP(currentMonthTotal)}`}
-                        trend="flat"
+                        trend={trend}
                         caption={`Mes Anterior ${formatCLP(previousMonthTotal)}`}
                         tone={tone} />
+
+                    <div className="mt-4 w-full rounded-lg border bg-background overflow-hidden">
+
+
+                        <div className="flex flex-col gap-2 border-b p-4">
+                            <h1 className="text-xl font-bold capitalize">{activeTable}</h1>
+                            <Input
+                                placeholder="Buscar..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {EXPENSE_COLUMNS.map((c) => (
+                                            <TableHead key={c.key}>{c.label}</TableHead>
+                                        ))}
+                                        <TableHead className="text-right">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                                            Sin datos (Tabla insertada)
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 </div>
 
 
