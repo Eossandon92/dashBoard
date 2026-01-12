@@ -8,6 +8,7 @@ import {
     Pencil,
     Trash2,
     Plus,
+    CircleX,
 } from "lucide-react";
 import * as React from "react";
 
@@ -32,7 +33,7 @@ import {
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import {
-    Table,
+
     TableBody,
     TableCell,
     TableHead,
@@ -42,6 +43,7 @@ import {
 import axios from "axios";
 import { KpiCard } from "../../components/ui/kpi-card";
 import { useAuth } from "../../context/AuthContext";
+import { cn } from "@/lib/utils";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 const now = new Date();
@@ -60,10 +62,8 @@ const EXPENSE_COLUMNS = [
     { key: "category", label: "Categoría" },
     { key: "amount", label: "Monto" },
     { key: "date", label: "Fecha" },
-    { key: "observation", label: "Observación" },
-    { key: "files", label: "Archivos" },
-    { key: "administrador_id", label: "Administrador" },
-    { key: "estado", label: "Estado" },
+    { key: "document_number", label: "N° Documento" },
+    { key: "status", label: "Estado" },
 ];
 
 
@@ -103,6 +103,8 @@ const Expense = () => {
     const [refreshExpenses, setRefreshExpenses] = useState(0);
     const [activeTable, setActiveTable] = useState("Gastos");
     const [search, setSearch] = useState("");
+    const [expenses, setExpenses] = useState([]);
+
 
 
     const { user } = useAuth()
@@ -111,11 +113,11 @@ const Expense = () => {
 
     // Calculate progress
     // Each field contributes 20% since there are 5 fields
-    const fields = [provider, category, expenseDate, amount, documentNumber];
+    const fields = [provider, category, expenseDate, amount, documentNumber, observation];
     const filledFields = fields.filter((field) => field && field.trim() !== "").length; // Basic fields
     // You might want to consider files in progress, but requirement was simple. 
     // Let's keep the logic consistent with previous count, maybe just checks if basic info is there.
-    const totalFields = 5;
+    const totalFields = 6;
     const progress = Math.round((filledFields / totalFields) * 100);
     const handleSubmit = async () => {
         try {
@@ -190,6 +192,18 @@ const Expense = () => {
     const removeFile = (indexToRemove) => {
         setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
     };
+    const getCondominiumId = () => {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return null;
+
+        try {
+            const parsed = JSON.parse(storedUser);
+            return parsed?.condominium_id ?? null;
+        } catch {
+            return null;
+        }
+    };
+
     useEffect(() => {
         fetch(`${backendUrl}/api/expenses/category`)
             .then(res => res.json())
@@ -203,6 +217,22 @@ const Expense = () => {
             .then(data => setProviders(data))
             .catch(err => console.error("Error cargando proveedores", err));
     }, []);
+
+    useEffect(() => {
+        if (!user?.condominium_id) return;
+
+        fetch(
+            `${backendUrl}/api/expenses/condominium?condominium_id=${user.condominium_id}`
+        )
+            .then(res => res.json())
+            .then(data => {
+                setExpenses(data);
+            })
+            .catch(err => console.error(err));
+    }, [user?.condominium_id, refreshExpenses]);
+
+
+
 
     useEffect(() => {
         if (!user?.condominium_id) return;
@@ -263,211 +293,230 @@ const Expense = () => {
 
     return (
         <>
-            <div className=" row w-full border border-danger">
-                <div className="col-6 flex w-full justify-center p-6">
-                    <MultiStepForm
-                        title="Registro de Gasto"
-                        description="Completa los datos para registrar un gasto del condominio."
-                        currentStep={1}
-                        totalSteps={1}
-                        progress={progress}
-                        progressText={`${progress}% completado`}
-                        onBack={() => { }}
-                        onNext={handleSubmit}
-                        nextButtonText="Registrar Gasto"
+            <div className="flex flex-col lg:flex-row h-[calc(100vh-130px)] overflow-visible">
+                {/* COLUMNA IZQUIERDA */}
+                <div className="w-full lg:w-[40%] h-full">
+                    <div className="p-6 h-full flex flex-col overflow-hidden">
+                        <MultiStepForm
+                            className="w-full h-full md:w-full"
+                            title="Registro de Gasto"
+                            description="Completa todos los campos obligatorios *."
+                            currentStep={1}
+                            totalSteps={1}
+                            progress={progress}
+                            progressText={`${progress}% completado`}
+                            onBack={() => { }}
+                            onNext={() => {
+                                if (progress < 100) {
+                                    alert("Debes completar todos los campos obligatorios antes de registrar.");
+                                    return;
+                                }
+                                handleSubmit();
+                            }}
+                            nextButtonText="Registrar Gasto"
+                            fullWidthButton={true}
+                        >
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-                    >
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                {/* País */}
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label>Proveedor</Label>
+                                    {/* Proveedor */}
+                                    <div className="space-y-2">
+                                        <Label>Proveedor *</Label>
+                                        <Select value={provider} onValueChange={setProvider} required>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Proveedor" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {providers.map((p) => (
+                                                    <SelectItem key={p.id} value={String(p.id)}>
+                                                        {p.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <Select value={provider} onValueChange={setProvider}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Proveedor" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {providers.map((provider) => (
-                                                <SelectItem key={provider.id} value={String(provider.id)}>
-                                                    {provider.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label>Tipo de Gasto</Label>
+                                    {/* Tipo de Gasto */}
+                                    <div className="space-y-2">
+                                        <Label>Tipo de Gasto *</Label>
+                                        <Select value={category} onValueChange={setCategory} required>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Tipo de gasto" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories.map((c) => (
+                                                    <SelectItem key={c.id} value={String(c.id)}>
+                                                        {c.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <Select value={category} onValueChange={setCategory}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Tipo de gasto" />
-                                        </SelectTrigger>
 
-                                        <SelectContent>
-                                            {categories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
-                                                </SelectItem>
+                                    {/* Fecha */}
+                                    <div className="space-y-2">
+                                        <Label>Fecha del gasto *</Label>
+                                        <Input
+                                            type="date"
+                                            value={expenseDate}
+                                            onChange={(e) => setExpenseDate(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Monto */}
+                                    <div className="space-y-2">
+                                        <Label>Monto *</Label>
+                                        <Input
+                                            placeholder="$ 0"
+                                            value={amountDisplay}
+                                            onChange={handleAmountChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Documento */}
+                                    <div className="space-y-2">
+                                        <Label>N° Documento *</Label>
+                                        <Input
+                                            placeholder="Ej: Factura 12345"
+                                            value={documentNumber}
+                                            onChange={(e) => setDocumentNumber(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Observación */}
+                                    <div className="space-y-2">
+                                        <Label>Observación *</Label>
+                                        <textarea
+                                            className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                                            value={observation}
+                                            onChange={(e) => setObservation(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Archivos */}
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label>Documento Adjunto</Label>
+                                        <Input
+                                            type="file"
+                                            onChange={handleFileChange}
+                                            multiple
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </MultiStepForm>
+                    </div>
+                </div>
+
+                {/* COLUMNA DERECHA */}
+                <div className="w-full lg:w-[60%] h-full ">
+                    <div className="p-6 h-full flex flex-col overflow-hidden">
+                        <div className="w-full rounded-md border bg-background overflow-hidden flex flex-col flex-1 shadow-sm">
+                            <div className="flex items-center justify-between gap-4 border-b p-4" >
+                                <h3 className="text-xl font-bold  whitespace-nowrap">
+                                    Historial de Gastos
+                                </h3>
+                                <Input
+                                    className="w-[180px] text-sm"
+                                    placeholder="Buscar…"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+
+
+                            <div className="flex-1 overflow-auto">
+                                <table className="w-full caption-bottom text-sm">
+
+                                    {/* HEADER */}
+                                    <TableHeader>
+                                        <TableRow className="sticky top-0 z-20 bg-slate-50 shadow-sm">
+                                            {EXPENSE_COLUMNS.map((c) => (
+                                                <TableHead
+                                                    key={c.key}
+                                                    className="font-semibold text-slate-600 tracking-wide"
+                                                >
+                                                    {c.label}
+                                                </TableHead>
                                             ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                            <TableHead className="text-center font-semibold text-slate-600 tracking-wide">
+                                                Acciones
 
-                                {/* Fecha */}
-                                <div className="space-y-2">
-                                    <Label>Fecha del gasto</Label>
-                                    <Input
-                                        type="date"
-                                        value={expenseDate}
-                                        onChange={(e) => setExpenseDate(e.target.value)}
-                                    />
-                                </div>
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
 
-                                {/* N° Monto */}
-                                <div className="space-y-2">
-                                    <Label>Monto</Label>
-                                    <Input
-                                        placeholder="$ 0"
-                                        value={amountDisplay}
-                                        onChange={(e) => handleAmountChange(e)}
-                                    />
-                                </div>
-
-                                {/* N° Documento */}
-                                <div className="space-y-2">
-                                    <Label>N° Documento</Label>
-                                    <Input
-                                        placeholder="Ej Número de factura 12345"
-                                        value={documentNumber}
-                                        onChange={(e) => setDocumentNumber(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Observacion */}
-                                <div className="space-y-2">
-                                    <Label>Observación</Label>
-                                    <textarea
-                                        className="
-                                w-full
-                                min-h-[100px]
-                                rounded-md
-                                border
-                                border-input
-                                bg-background
-                                px-3
-                                py-2        
-                                text-sm
-                                resize-y
-                                focus:outline-none
-                                focus:ring-2
-                                focus:ring-ring
-                                "
-                                        placeholder="Ej: Factura incluye enero y febrero"
-                                        value={observation}
-                                        onChange={(e) => setObservation(e.target.value)}
-                                    />
-                                </div>
-
-                                {/*  Documento  Adjunto */}
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label>Documento Adjunto</Label>
-                                    <Input
-                                        type="file"
-                                        placeholder="Opcional"
-                                        onChange={handleFileChange}
-                                        accept=".pdf, .doc, .docx, .jpg, .jpeg, .png"
-                                        multiple
-                                    />
-                                    {files.length > 0 && (
-                                        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                                            {files.map((file, index) => (
-                                                <div key={index} className="relative group flex flex-col items-center justify-center p-2 border rounded-md hover:bg-slate-50 transition-colors">
-                                                    <button
-                                                        onClick={() => removeFile(index)}
-                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm hover:bg-red-600 transition-colors"
-                                                        type="button"
-                                                        title="Eliminar archivo"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </button>
-
-                                                    {file.type.startsWith("image/") ? (
-                                                        <img
-                                                            src={URL.createObjectURL(file)}
-                                                            alt={file.name}
-                                                            className="h-20 w-20 object-cover rounded-md mb-2"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-20 w-20 flex items-center justify-center bg-slate-100 rounded-md mb-2">
-                                                            <FileText className="h-10 w-10 text-slate-400" />
-                                                        </div>
-                                                    )}
-                                                    <span className="text-xs text-center truncate w-full px-1" title={file.name}>
-                                                        {file.name}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                    {/* BODY */}
+                                    <TableBody>
+                                        {expenses.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={EXPENSE_COLUMNS.length + 1}
+                                                    className="text-center h-24 text-muted-foreground"
+                                                >
+                                                    Sin datos
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            expenses
+                                                .filter((e) =>
+                                                    e.document_number?.toLowerCase().includes(search.toLowerCase())
+                                                )
+                                                .map((expense) => (
+                                                    <TableRow key={expense.id}>
+                                                        <TableCell>{expense.provider_name}</TableCell>
+                                                        <TableCell>{expense.category_name}</TableCell>
+                                                        <TableCell className="text-left tabular-nums">
+                                                            {formatCLP(expense.amount)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {new Date(expense.expense_date).toLocaleDateString("es-CL")}
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            {expense.document_number}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                className={cn(
+                                                                    "font-medium",
+                                                                    expense.status === "Pendiente" &&
+                                                                    "bg-yellow-100 text-yellow-800",
+                                                                    expense.status === "Pagado" &&
+                                                                    "bg-green-100 text-green-800"
+                                                                )}
+                                                            >
+                                                                {expense.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <div className="flex justify-center gap-3">
+                                                                <Button size="icon" variant="ghost" className="hover:bg-slate-100">
+                                                                    <Pencil className="h-4 w-4 text-slate-600" />
+                                                                </Button>
+                                                                <Button size="icon" variant="ghost" className="hover:bg-red-50 hover:text-red-600">
+                                                                    <CircleX className="h-4 w-4 text-red-400 transition-colors" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                        )}
+                                    </TableBody>
+                                </table>
                             </div>
 
 
                         </div>
-                    </MultiStepForm>
-                </div>
-
-
-                <div className="col-12 col-sm-6 col-md-5 col-lg-6 mb-5 p-6 w-full ">
-                    <KpiCard
-                        label="📊  Comparativo de Gastos"
-                        value={`Mes Actual ${formatCLP(currentMonthTotal)}`}
-                        trend={trend}
-                        caption={`Mes Anterior ${formatCLP(previousMonthTotal)}`}
-                        tone={tone} />
-
-                    <div className="mt-4 w-full rounded-lg border bg-background overflow-hidden">
-
-
-                        <div className="flex flex-col gap-2 border-b p-4">
-                            <h1 className="text-xl font-bold capitalize">{activeTable}</h1>
-                            <Input
-                                placeholder="Buscar..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        {EXPENSE_COLUMNS.map((c) => (
-                                            <TableHead key={c.key}>{c.label}</TableHead>
-                                        ))}
-                                        <TableHead className="text-right">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
-                                            Sin datos (Tabla insertada)
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
                     </div>
                 </div>
-
-
             </div>
         </>
     );
+
 };
 
 export default Expense;

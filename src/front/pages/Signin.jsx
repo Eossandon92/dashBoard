@@ -43,9 +43,25 @@ const Signin = () => {
         <SignIn2
             onSubmit={handleLogin}
             style={{
-                backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05)), url("https://res.cloudinary.com/dnkalrt1u/image/upload/v1767882973/BackgroundSignIn_k9lro8.png")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                // 1. Obligar al contenedor a ocupar toda la pantalla
+                width: '100vw',        // 100% del ancho de la VISIÓN (Viewport Width)
+                height: '100vh',       // 100% del alto de la VISIÓN (Viewport Height)
+                position: 'fixed',     // Fija el fondo para que no se mueva y ignore márgenes de padres
+                top: 0,
+                left: 0,
+                margin: 0,             // Elimina márgenes accidentales
+                padding: 0,            // Elimina rellenos accidentales
+
+                // 2. Propiedades de la imagen
+                backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05)), url("https://res.cloudinary.com/dnkalrt1u/image/upload/v1768250330/modernized_gestora_login_screen_1_mzkchf.png")`,
+                backgroundSize: 'cover',   // Mantiene la proporción y cubre todo
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+
+                // 3. Para centrar tu cuadro de login (opcional, pero útil)
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
             }}
         />
     )

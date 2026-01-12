@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from api.models import db, User, Role, ExpenseCategory, Expense
 from datetime import date
+from sqlalchemy.orm import joinedload
+
 
 expenses_bp = Blueprint("expenses_bp", __name__)
 
@@ -148,3 +150,40 @@ def create_expense():
         "expense_date": new_expense.expense_date.isoformat(),
         "status": new_expense.status,
     }), 201
+
+
+@expenses_bp.route("/expenses/condominium", methods=["GET"])
+def get_expenses_by_condominium():
+    condominium_id = request.args.get("condominium_id")
+
+    if not condominium_id:
+        return jsonify({"message": "condominium_id es requerido"}), 400
+
+    expenses = (
+        Expense.query
+        .options(
+            joinedload(Expense.provider),
+            joinedload(Expense.category)
+        )
+        .filter_by(condominium_id=condominium_id)
+        .order_by(Expense.expense_date.desc())
+        .all()
+    )
+
+    return jsonify([
+        {
+            "id": e.id,
+            "provider_id": e.provider_id,
+            "provider_name": e.provider.name if e.provider else None,   # ✅ AQUÍ
+            "category_id": e.category_id,
+            "category_name": e.category.name if e.category else None,   # ✅ AQUÍ
+            "condominium_id": e.condominium_id,
+            "amount": float(e.amount),
+            "observation": e.observation,
+            "document_number": e.document_number,
+            "expense_date": e.expense_date.isoformat(),
+            "status": e.status,
+        }
+        for e in expenses
+    ]), 200
+

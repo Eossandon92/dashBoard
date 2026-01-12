@@ -120,7 +120,7 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl shadow-sm',
+        'relative overflow-hidden rounded-md shadow-sm',
         t.card,
         s.pad,
         !compact && 'min-h-[92px]',

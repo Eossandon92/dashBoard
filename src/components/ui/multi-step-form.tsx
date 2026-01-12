@@ -37,6 +37,7 @@ interface MultiStepFormProps extends React.HTMLAttributes<HTMLDivElement>, Varia
   footerContent?: React.ReactNode;
   progress?: number;
   progressText?: string;
+  fullWidthButton?: boolean;
 }
 
 const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
@@ -56,6 +57,7 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
     children,
     progress: explicitProgress,
     progressText,
+    fullWidthButton = false,
     ...props
   }, ref) => {
     const calculatedProgress = Math.round((currentStep / totalSteps) * 100);
@@ -108,13 +110,13 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
 
         <CardFooter className="flex justify-between">
           <div>{footerContent}</div>
-          <div className="flex gap-2">
+          <div className={cn("flex gap-2", fullWidthButton && "w-full")}>
             {currentStep > 1 && (
               <Button variant="outline" onClick={onBack}>
                 {backButtonText}
               </Button>
             )}
-            <Button onClick={onNext}>
+            <Button onClick={onNext} className={cn(fullWidthButton && "w-full")}>
               {nextButtonText}
             </Button>
           </div>
