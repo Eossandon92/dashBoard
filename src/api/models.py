@@ -210,7 +210,12 @@ class Expense(db.Model):
         nullable=False
     )
 
-    condominium_id = db.Column(db.Integer, nullable=False)
+    # CORRECCIÓN: Agregué ForeignKey para integridad referencial
+    condominium_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("condominios.id"), 
+        nullable=False
+    ) 
 
     category_id = db.Column(
         db.Integer,
@@ -218,16 +223,19 @@ class Expense(db.Model):
         nullable=False
     )
 
+    # NUEVO: Relación con la tabla de estados
+    expense_status_id = db.Column(
+        db.Integer,
+        db.ForeignKey("expense_statuses.id"),
+        nullable=True,
+        default=1 # Asumiendo que el ID 1 es "Pendiente" o "Registrado"
+    )
+
     expense_date = db.Column(db.Date, nullable=False)
-
     observation = db.Column(Text, nullable=True)
-
     amount = db.Column(db.Numeric(10, 2), nullable=False)
-
     document_number = db.Column(db.String(100))
-
     is_recurring = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(50), default="registered")
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
@@ -236,8 +244,13 @@ class Expense(db.Model):
         onupdate=db.func.now()
     )
 
+    # Relaciones (Joins)
     provider = db.relationship("Provider")
     category = db.relationship("ExpenseCategory")
+    condominium = db.relationship("Condominio") # Relación útil para acceder a datos del condominio desde el gasto
+    
+    # Relación con el estado
+    status = db.relationship("ExpenseStatus")
 
 
 
@@ -258,6 +271,18 @@ class ExpenseDocument(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     expense = db.relationship("Expense")
+
+
+class ExpenseStatus(db.Model):
+    __tablename__ = "expense_statuses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False) # Ej: Pendiente, Pagado
+    description = db.Column(db.String(255), nullable=True)  
+    is_active = db.Column(db.Boolean, default=True)
+
+    def __repr__(self):
+        return f"<ExpenseStatus {self.name}>"
 
 
 class AuditLog(db.Model):

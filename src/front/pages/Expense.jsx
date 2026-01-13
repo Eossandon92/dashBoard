@@ -9,6 +9,8 @@ import {
     Trash2,
     Plus,
     CircleX,
+    Check,
+    Eye,
 } from "lucide-react";
 import * as React from "react";
 
@@ -44,7 +46,6 @@ import axios from "axios";
 import { KpiCard } from "../../components/ui/kpi-card";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "@/lib/utils";
-
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 const now = new Date();
 const month = now.getMonth() + 1;
@@ -62,7 +63,7 @@ const EXPENSE_COLUMNS = [
     { key: "category", label: "Categoría" },
     { key: "amount", label: "Monto" },
     { key: "date", label: "Fecha" },
-    { key: "document_number", label: "N° Documento" },
+    { key: "document_number", label: "N° Docum" },
     { key: "status", label: "Estado" },
 ];
 
@@ -104,6 +105,8 @@ const Expense = () => {
     const [activeTable, setActiveTable] = useState("Gastos");
     const [search, setSearch] = useState("");
     const [expenses, setExpenses] = useState([]);
+    const [selectedExpense, setSelectedExpense] = useState(null); // Gasto seleccionado
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
 
 
@@ -111,6 +114,76 @@ const Expense = () => {
     const previousMonth = month === 1 ? 12 : month - 1;
     const previousYear = month === 1 ? year - 1 : year;
 
+    // --- Inline Editing State ---
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
+
+    // Initiate editing for a specific row
+    const handleStartEdit = (expense) => {
+        setEditingId(expense.id);
+        // Pre-fill with existing data. 
+        // Note safely accessing properties.
+        setEditForm({
+            provider_id: expense.provider_id ? String(expense.provider_id) : "",
+            category_id: expense.category_id ? String(expense.category_id) : "",
+            amount: expense.amount,
+            expense_date: expense.expense_date ? expense.expense_date.split("T")[0] : "",
+            document_number: expense.document_number || "",
+            expense_status_id: expense.expense_status_id ? String(expense.expense_status_id) : "", // Add status
+        });
+    };
+
+    // Cancel editing
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditForm({});
+    };
+
+    // Handle input changes in the edit row
+    const handleEditFormChange = (field, value) => {
+        setEditForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    // Save changes
+    const handleSaveEdit = async (id) => {
+        try {
+            // Construct payload. 
+            // NOTE: Adjust fields as per your backend requirement.
+            const payload = {
+                ...editForm,
+                // Ensure condomimium_id is sent if required, or handled by backend
+                condominium_id: user.condominium_id,
+            };
+
+            await axios.put(`${backendUrl}/api/expenses/${id}`, payload);
+
+            // Refresh list
+            setRefreshExpenses((prev) => prev + 1);
+            handleCancelEdit();
+        } catch (error) {
+            console.error("Error updating expense:", error);
+            alert("Error al actualizar el gasto");
+        }
+    };
+    const handleAnular = async (expenseId, statusId) => { // Cambié el nombre a expenseId para no confundirnos
+
+        // Tienes que buscar en tu base de datos qué número tiene el estado "Anulado"
+        // Digamos que es el 5. ¡Este número NO cambia según el gasto!
+        const STATUS_ANULADO_ID = statusId;
+
+        try {
+            await axios.put(`${backendUrl}/api/expenses/${expenseId}`, {
+                expense_status_id: STATUS_ANULADO_ID
+            });
+            setRefreshExpenses((prev) => prev + 1);
+            handleCancelEdit();
+        } catch (error) {
+            alert("No se pudo anular el gasto");
+        }
+    }
     // Calculate progress
     // Each field contributes 20% since there are 5 fields
     const fields = [provider, category, expenseDate, amount, documentNumber, observation];
@@ -140,9 +213,6 @@ const Expense = () => {
                     },
                 }
             )
-
-            console.log("Gasto creado:", response.data)
-            alert("Gasto registrado exitosamente!")
             resetForm()
             setRefreshExpenses((prev) => prev + 1);
         } catch (error) {
@@ -175,6 +245,13 @@ const Expense = () => {
         }
     };
 
+    const handleShowDetail = (expense) => {
+        // Si necesitas cargar datos extra del backend, hazlo aquí.
+        // Por ahora, asumimos que 'expense' ya trae lo básico.
+        setSelectedExpense(expense);
+        setIsDetailOpen(true);
+    };
+
     const formatCLP = (value) => {
         return new Intl.NumberFormat("es-CL", {
             style: "currency",
@@ -204,6 +281,8 @@ const Expense = () => {
         }
     };
 
+    const [statuses, setStatuses] = useState([]);
+
     useEffect(() => {
         fetch(`${backendUrl}/api/expenses/category`)
             .then(res => res.json())
@@ -216,6 +295,14 @@ const Expense = () => {
             .then(res => res.json())
             .then(data => setProviders(data))
             .catch(err => console.error("Error cargando proveedores", err));
+    }, []);
+
+    useEffect(() => {
+        // Fetch statuses
+        fetch(`${backendUrl}/api/expenses/status`)
+            .then(res => res.json())
+            .then(data => setStatuses(data))
+            .catch(err => console.error("Error cargando estados", err));
     }, []);
 
     useEffect(() => {
@@ -387,10 +474,11 @@ const Expense = () => {
                                     </div>
 
                                     {/* Observación */}
-                                    <div className="space-y-2">
-                                        <Label>Observación *</Label>
+                                    <div className="">
+                                        <Label>Detalle *</Label>
                                         <textarea
-                                            className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                                            className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm focus:outline-none "
+                                            style={{ resize: 'none' }}
                                             value={observation}
                                             onChange={(e) => setObservation(e.target.value)}
                                             required
@@ -398,13 +486,44 @@ const Expense = () => {
                                     </div>
 
                                     {/* Archivos */}
-                                    <div className="space-y-2 md:col-span-2">
+                                    <div className="md:col-span-2">
                                         <Label>Documento Adjunto</Label>
                                         <Input
                                             type="file"
                                             onChange={handleFileChange}
                                             multiple
                                         />
+
+                                        {/* Previsualización de archivos */}
+                                        {files.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-4 mt-2 sm:grid-cols-3 md:grid-cols-4">
+                                                {files.map((file, index) => (
+                                                    <div key={index} className="relative group border rounded-lg p-2 flex flex-col items-center bg-slate-50">
+                                                        {file.type.startsWith("image/") ? (
+                                                            <img
+                                                                src={URL.createObjectURL(file)}
+                                                                alt="preview"
+                                                                className="h-20 w-full object-cover rounded-md"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-20 w-full flex items-center justify-center bg-slate-200 rounded-md">
+                                                                <FileText className="h-8 w-8 text-slate-500" />
+                                                            </div>
+                                                        )}
+                                                        <span className="text-xs text-slate-600 mt-2 truncate w-full text-center" title={file.name}>
+                                                            {file.name}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFile(index)}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 "
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -466,44 +585,191 @@ const Expense = () => {
                                                 .filter((e) =>
                                                     e.document_number?.toLowerCase().includes(search.toLowerCase())
                                                 )
-                                                .map((expense) => (
-                                                    <TableRow key={expense.id}>
-                                                        <TableCell>{expense.provider_name}</TableCell>
-                                                        <TableCell>{expense.category_name}</TableCell>
-                                                        <TableCell className="text-left tabular-nums">
-                                                            {formatCLP(expense.amount)}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {new Date(expense.expense_date).toLocaleDateString("es-CL")}
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            {expense.document_number}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge
-                                                                className={cn(
-                                                                    "font-medium",
-                                                                    expense.status === "Pendiente" &&
-                                                                    "bg-yellow-100 text-yellow-800",
-                                                                    expense.status === "Pagado" &&
-                                                                    "bg-green-100 text-green-800"
+                                                .map((expense) => {
+                                                    const isEditing = editingId === expense.id;
+
+                                                    return (
+                                                        <TableRow key={expense.id}>
+                                                            {/* PROVEEDOR */}
+                                                            <TableCell>
+                                                                {isEditing ? (
+                                                                    <Select
+                                                                        value={editForm.provider_id}
+                                                                        onValueChange={(val) => handleEditFormChange("provider_id", val)}
+                                                                    >
+                                                                        <SelectTrigger className="h-8 w-full">
+                                                                            <SelectValue placeholder="Proveedor" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {providers.map((p) => (
+                                                                                <SelectItem key={p.id} value={String(p.id)}>
+                                                                                    {p.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    expense.provider_name
                                                                 )}
-                                                            >
-                                                                {expense.status}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <div className="flex justify-center gap-3">
-                                                                <Button size="icon" variant="ghost" className="hover:bg-slate-100">
-                                                                    <Pencil className="h-4 w-4 text-slate-600" />
-                                                                </Button>
-                                                                <Button size="icon" variant="ghost" className="hover:bg-red-50 hover:text-red-600">
-                                                                    <CircleX className="h-4 w-4 text-red-400 transition-colors" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
+                                                            </TableCell>
+
+                                                            {/* CATEGORÍA */}
+                                                            <TableCell>
+                                                                {isEditing ? (
+                                                                    <Select
+                                                                        value={editForm.category_id}
+                                                                        onValueChange={(val) => handleEditFormChange("category_id", val)}
+                                                                    >
+                                                                        <SelectTrigger className="h-8 w-full">
+                                                                            <SelectValue placeholder="Categoría" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {categories.map((c) => (
+                                                                                <SelectItem key={c.id} value={String(c.id)}>
+                                                                                    {c.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    expense.category_name
+                                                                )}
+                                                            </TableCell>
+
+                                                            {/* MONTO */}
+                                                            <TableCell className="text-left tabular-nums">
+                                                                {isEditing ? (
+                                                                    <Input
+                                                                        className="h-8 w-24"
+                                                                        type="number"
+                                                                        value={editForm.amount}
+                                                                        onChange={(e) => handleEditFormChange("amount", e.target.value)}
+                                                                    />
+                                                                ) : (
+                                                                    formatCLP(expense.amount)
+                                                                )}
+                                                            </TableCell>
+
+                                                            {/* FECHA */}
+                                                            <TableCell>
+                                                                {isEditing ? (
+                                                                    <Input
+                                                                        className="h-8 w-32"
+                                                                        type="date"
+                                                                        value={editForm.expense_date}
+                                                                        onChange={(e) => handleEditFormChange("expense_date", e.target.value)}
+                                                                    />
+                                                                ) : (
+                                                                    new Date(expense.expense_date).toLocaleDateString("es-CL")
+                                                                )}
+                                                            </TableCell>
+
+                                                            {/* N° DOCUMENTO */}
+                                                            <TableCell className="text-center">
+                                                                {isEditing ? (
+                                                                    <Input
+                                                                        className="h-8 w-full"
+                                                                        value={editForm.document_number}
+                                                                        onChange={(e) => handleEditFormChange("document_number", e.target.value)}
+                                                                    />
+                                                                ) : (
+                                                                    expense.document_number
+                                                                )}
+                                                            </TableCell>
+
+                                                            {/* ESTADO */}
+                                                            <TableCell>
+                                                                {isEditing ? (
+                                                                    <Select
+                                                                        value={editForm.expense_status_id}
+                                                                        onValueChange={(val) => handleEditFormChange("expense_status_id", val)}
+                                                                    >
+                                                                        <SelectTrigger className="h-8 w-32">
+                                                                            <SelectValue placeholder="Estado" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {statuses.map((s) => (
+                                                                                <SelectItem key={s.id} value={String(s.id)}>
+                                                                                    {s.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <Badge
+                                                                        className={cn(
+                                                                            "font-medium",
+                                                                            expense.status === "Pendiente" &&
+                                                                            "bg-yellow-100 text-yellow-800",
+                                                                            expense.status === "Pagado" &&
+                                                                            "bg-green-100 text-green-800",
+                                                                            expense.status === "Anulado" &&
+                                                                            "bg-red-100 text-red-800"
+                                                                        )}
+                                                                    >
+                                                                        {expense.status}
+                                                                    </Badge>
+                                                                )}
+                                                            </TableCell>
+
+                                                            {/* ACCIONES */}
+                                                            <TableCell className="text-center">
+                                                                <div className="flex justify-center gap-3">
+                                                                    {isEditing ? (
+                                                                        <>
+                                                                            <Button
+                                                                                size="icon"
+                                                                                variant="ghost"
+                                                                                className="hover:bg-green-50 hover:text-green-600"
+                                                                                onClick={() => handleSaveEdit(expense.id)}
+                                                                            >
+                                                                                <Check className="h-4 w-4" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="icon"
+                                                                                variant="ghost"
+                                                                                className="hover:bg-red-50 hover:text-red-600"
+                                                                                onClick={handleCancelEdit}
+                                                                            >
+                                                                                <X className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Button
+                                                                                size="icon"
+                                                                                variant="ghost"
+                                                                                className="hover:bg-blue-50 hover:text-blue-600"
+                                                                                onClick={() => handleShowDetail(expense)}
+                                                                                title="Ver detalle"
+                                                                            >
+                                                                                <Eye className="h-4 w-4 text-blue-500 transition-colors" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="icon"
+                                                                                variant="ghost"
+                                                                                className="hover:bg-slate-100"
+                                                                                onClick={() => handleStartEdit(expense)}
+                                                                            >
+                                                                                <Pencil className="h-4 w-4 text-slate-600" />
+                                                                            </Button>
+
+                                                                            <Button
+                                                                                size="icon"
+                                                                                variant="ghost"
+                                                                                className="hover:bg-red-50 hover:text-red-600"
+                                                                                onClick={() => handleAnular(expense.id, 3)}
+                                                                            >
+                                                                                <CircleX className="h-4 w-4 text-red-400 transition-colors" />
+                                                                            </Button>
+
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
                                         )}
                                     </TableBody>
                                 </table>
@@ -514,6 +780,138 @@ const Expense = () => {
                     </div>
                 </div>
             </div>
+            {/* ========================================== */}
+            {/* MODAL DE DETALLE                 */}
+            {/* ========================================== */}
+            {isDetailOpen && selectedExpense && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+
+                    {/* Contenedor Blanco */}
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                        {/* Cabecera */}
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="text-lg font-semibold text-slate-800">
+                                    Detalle del Gasto
+                                </h3>
+                                <p className="text-sm text-slate-500">
+                                    Documento N° {selectedExpense.document_number || 'S/N'}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsDetailOpen(false)}
+                                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                            >
+                                <X className="h-5 w-5 text-slate-500" />
+                            </button>
+                        </div>
+
+                        {/* Cuerpo con Scroll */}
+                        <div className="p-6 overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                {/* COLUMNA IZQUIERDA: DATOS */}
+                                <div className="space-y-6">
+                                    {/* Estado y Fecha */}
+                                    <div className="flex justify-between items-center">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${selectedExpense.status === 'Pagado' ? 'bg-green-50 text-green-700 border-green-200' :
+                                            selectedExpense.status === 'Anulado' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                            }`}>
+                                            {selectedExpense.status}
+                                        </span>
+                                        <span className="text-sm text-slate-500">
+                                            {selectedExpense.expense_date}
+                                        </span>
+                                    </div>
+
+                                    {/* Monto Principal */}
+                                    <div>
+                                        <label className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Monto Total</label>
+                                        <div className="text-3xl font-bold text-slate-800">
+                                            ${new Intl.NumberFormat('es-CL').format(selectedExpense.amount)}
+                                        </div>
+                                    </div>
+
+                                    {/* Detalles */}
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                            <span className="text-xs text-slate-400 block mb-1">Proveedor</span>
+                                            <span className="font-medium text-slate-700">{selectedExpense.provider_name}</span>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                            <span className="text-xs text-slate-400 block mb-1">Categoría</span>
+                                            <span className="font-medium text-slate-700">{selectedExpense.category_name}</span>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                            <span className="text-xs text-slate-400 block mb-1">Observación</span>
+                                            <p className="text-sm text-slate-600 leading-relaxed">
+                                                {selectedExpense.observation || "Sin observaciones registradas."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* COLUMNA DERECHA: ADJUNTOS / IMÁGENES */}
+                                <div className="border-l border-slate-100 md:pl-8">
+                                    <h4 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                        <FileText className="h-4 w-4" />
+                                        Documentos Adjuntos
+                                    </h4>
+
+                                    <div className="space-y-4">
+                                        {selectedExpense.documents && selectedExpense.documents.length > 0 ? (
+                                            selectedExpense.documents.map((doc, index) => (
+                                                <div key={index} className="group relative rounded-lg border border-slate-200 overflow-hidden bg-slate-50 hover:shadow-md transition-all">
+
+                                                    {/* Verificación simple de imagen por extensión */}
+                                                    {doc.url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                            <img
+                                                                src={doc.url}
+                                                                alt="Comprobante"
+                                                                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                                <span className="bg-white/90 text-xs py-1 px-3 rounded-full shadow-sm font-medium">Ver Pantalla Completa</span>
+                                                            </div>
+                                                        </a>
+                                                    ) : (
+                                                        <div className="p-6 flex flex-col items-center justify-center text-slate-400">
+                                                            <FileText className="h-12 w-12 mb-2" />
+                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm font-medium">
+                                                                Ver Documento ({doc.type || 'Archivo'})
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="h-40 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+                                                <FileText className="h-8 w-8 mb-2 opacity-50" />
+                                                <span className="text-sm">No hay archivos adjuntos</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                            <button
+                                onClick={() => setIsDetailOpen(false)}
+                                className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800 transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 
