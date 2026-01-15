@@ -13,6 +13,7 @@ export const Sidebar = () => {
                 <li className="nav-item">
                     <NavLink
                         to="/app/admin-panel"
+                        end
                         className={({ isActive }) =>
                             `nav-link ${isActive ? "active" : ""}`
                         }
@@ -23,45 +24,29 @@ export const Sidebar = () => {
                 </li>
 
                 <li className="nav-item">
-                    <NavLink to="/app" className="nav-link">
+                    <NavLink to="/app"
+                        end
+                        className={({ isActive }) =>
+                            `nav-link ${isActive ? "active" : ""}`
+                        }
+                    >
                         <i className="nav-icon cil-speedometer"></i>
                         Dashboard
                     </NavLink>
                 </li>
 
                 <li className="nav-item">
-                    <NavLink to="/app/expense" className="nav-link">
+                    <NavLink to="/app/expense"
+                        end
+                        className={({ isActive }) =>
+                            `nav-link ${isActive ? "active" : ""}`
+                        }
+                    >
                         <i className="nav-icon cil-money"></i>
                         Gastos
                     </NavLink>
                 </li>
 
-                <li className="nav-item nav-group show">
-                    <span className="nav-link nav-group-toggle">
-                        <i className="nav-icon cil-puzzle"></i>
-                        Nav dropdown
-                    </span>
-
-                    <ul className="nav-group-items">
-                        <li className="nav-item">
-                            <NavLink to="/item-1" className="nav-link">
-                                <span className="nav-icon">
-                                    <span className="nav-icon-bullet"></span>
-                                </span>
-                                Nav dropdown item
-                            </NavLink>
-                        </li>
-
-                        <li className="nav-item">
-                            <NavLink to="/item-2" className="nav-link">
-                                <span className="nav-icon">
-                                    <span className="nav-icon-bullet"></span>
-                                </span>
-                                Nav dropdown item
-                            </NavLink>
-                        </li>
-                    </ul>
-                </li>
 
                 {/* Links externos se dejan con <a> */}
                 <li className="nav-item mt-auto">

@@ -81,6 +81,27 @@ const Expense = () => {
     const previousMonth = month === 1 ? 12 : month - 1;
     const previousYear = month === 1 ? year - 1 : year;
 
+    // --- Pagination State ---
+    const ITEMS_PER_PAGE = 6;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Calculate filtered expenses first
+    const filteredExpenses = expenses.filter((e) =>
+        e.document_number?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
+
+    const paginatedExpenses = filteredExpenses.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
     // --- Inline Editing State ---
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
@@ -317,7 +338,7 @@ const Expense = () => {
                                     <div className="">
                                         <Label>Detalle *</Label>
                                         <textarea
-                                            className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                                            className="w-full min-h-[100px] rounded-md border border-slate-300 bg-[var(--body-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 hover:border-slate-400 transition-colors"
                                             style={{ resize: 'none' }}
                                             value={observation}
                                             onChange={(e) => setObservation(e.target.value)}
@@ -373,100 +394,123 @@ const Expense = () => {
                                     </TableHeader>
 
                                     <TableBody>
-                                        {expenses.length === 0 ? (
+                                        {paginatedExpenses.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={EXPENSE_COLUMNS.length + 1} className="text-center h-24 text-muted-foreground">Sin datos</TableCell>
                                             </TableRow>
                                         ) : (
-                                            expenses
-                                                .filter((e) => e.document_number?.toLowerCase().includes(search.toLowerCase()))
-                                                .map((expense) => {
-                                                    const isEditing = editingId === expense.id;
-                                                    return (
-                                                        <TableRow key={expense.id}>
-                                                            <TableCell>
-                                                                {isEditing ? (
-                                                                    <Select value={editForm.provider_id} onValueChange={(val) => handleEditFormChange("provider_id", val)}>
-                                                                        <SelectTrigger className="h-8 w-full"><SelectValue placeholder="Proveedor" /></SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {providers.map((p) => (<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                ) : expense.provider_name}
-                                                            </TableCell>
+                                            paginatedExpenses.map((expense) => {
+                                                const isEditing = editingId === expense.id;
+                                                return (
+                                                    <TableRow key={expense.id}>
+                                                        <TableCell>
+                                                            {isEditing ? (
+                                                                <Select value={editForm.provider_id} onValueChange={(val) => handleEditFormChange("provider_id", val)}>
+                                                                    <SelectTrigger className="h-8 w-full"><SelectValue placeholder="Proveedor" /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {providers.map((p) => (<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : expense.provider_name}
+                                                        </TableCell>
 
-                                                            <TableCell className="">
-                                                                {isEditing ? (
-                                                                    <Select value={editForm.category_id} onValueChange={(val) => handleEditFormChange("category_id", val)}>
-                                                                        <SelectTrigger className="h-8 w-full"><SelectValue placeholder="Categoría" /></SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                ) : expense.category_name}
-                                                            </TableCell>
+                                                        <TableCell className="">
+                                                            {isEditing ? (
+                                                                <Select value={editForm.category_id} onValueChange={(val) => handleEditFormChange("category_id", val)}>
+                                                                    <SelectTrigger className="h-8 w-full"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : expense.category_name}
+                                                        </TableCell>
 
-                                                            <TableCell className="text-left tabular-nums">
-                                                                {isEditing ? (
-                                                                    <Input className="h-8 w-24" type="number" value={editForm.amount} onChange={(e) => handleEditFormChange("amount", e.target.value)} />
-                                                                ) : formatCLP(expense.amount)}
-                                                            </TableCell>
+                                                        <TableCell className="text-left tabular-nums">
+                                                            {isEditing ? (
+                                                                <Input className="h-8 w-24" type="number" value={editForm.amount} onChange={(e) => handleEditFormChange("amount", e.target.value)} />
+                                                            ) : formatCLP(expense.amount)}
+                                                        </TableCell>
 
-                                                            <TableCell className="px-1">
-                                                                {isEditing ? (
-                                                                    <Input className="h-8 w-32" type="date" value={editForm.expense_date} onChange={(e) => handleEditFormChange("expense_date", e.target.value)} />
-                                                                ) : new Date(expense.expense_date).toLocaleDateString("es-CL")}
-                                                            </TableCell>
+                                                        <TableCell className="px-1">
+                                                            {isEditing ? (
+                                                                <Input className="h-8 w-32" type="date" value={editForm.expense_date} onChange={(e) => handleEditFormChange("expense_date", e.target.value)} />
+                                                            ) : new Date(expense.expense_date).toLocaleDateString("es-CL")}
+                                                        </TableCell>
 
-                                                            <TableCell className="text-center">
-                                                                {isEditing ? (
-                                                                    <Input className="h-8 w-full" value={editForm.document_number} onChange={(e) => handleEditFormChange("document_number", e.target.value)} />
-                                                                ) : expense.document_number}
-                                                            </TableCell>
+                                                        <TableCell className="text-center">
+                                                            {isEditing ? (
+                                                                <Input className="h-8 w-full" value={editForm.document_number} onChange={(e) => handleEditFormChange("document_number", e.target.value)} />
+                                                            ) : expense.document_number}
+                                                        </TableCell>
 
-                                                            <TableCell className="text-left px-1">
-                                                                {isEditing ? (
-                                                                    <Select value={editForm.expense_status_id} onValueChange={(val) => handleEditFormChange("expense_status_id", val)}>
-                                                                        <SelectTrigger className="h-8 w-32"><SelectValue placeholder="Estado" /></SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {statuses.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                ) : (
-                                                                    <Badge className={cn(
-                                                                        "font-medium",
-                                                                        expense.status === "Pendiente" && "bg-yellow-100 text-yellow-800",
-                                                                        expense.status === "Pagado" && "bg-green-100 text-green-800",
-                                                                        expense.status === "Anulado" && "bg-red-100 text-red-800",
-                                                                        expense.status === "Aprobado" && "bg-blue-100 text-blue-800"
-                                                                    )}>
-                                                                        {expense.status}
-                                                                    </Badge>
-                                                                )}
-                                                            </TableCell>
+                                                        <TableCell className="text-left px-1">
+                                                            {isEditing ? (
+                                                                <Select value={editForm.expense_status_id} onValueChange={(val) => handleEditFormChange("expense_status_id", val)}>
+                                                                    <SelectTrigger className="h-8 w-32"><SelectValue placeholder="Estado" /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {statuses.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : (
+                                                                <Badge className={cn(
+                                                                    "font-medium",
+                                                                    expense.status === "Pendiente" && "bg-yellow-100 text-yellow-800",
+                                                                    expense.status === "Pagado" && "bg-green-100 text-green-800",
+                                                                    expense.status === "Anulado" && "bg-red-100 text-red-800",
+                                                                    expense.status === "Aprobado" && "bg-blue-100 text-blue-800"
+                                                                )}>
+                                                                    {expense.status}
+                                                                </Badge>
+                                                            )}
+                                                        </TableCell>
 
-                                                            <TableCell className="text-right px-4">
-                                                                {isEditing ? (
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <Button size="icon" variant="ghost" className="hover:bg-green-50 hover:text-green-600" onClick={() => handleSaveEdit(expense.id)}><Check className="h-4 w-4" /></Button>
-                                                                        <Button size="icon" variant="ghost" className="hover:bg-red-50 hover:text-red-600" onClick={handleCancelEdit}><X className="h-4 w-4" /></Button>
-                                                                    </div>
-                                                                ) : (
-                                                                    // === AQUÍ ESTÁ EL CAMBIO CLAVE: USAMOS EL COMPONENTE ActionMenu ===
-                                                                    <ActionMenu
-                                                                        expense={expense}
-                                                                        onDetail={handleShowDetail}
-                                                                        onEdit={handleStartEdit}
-                                                                        onStatusChange={handleChangeStatus}
-                                                                    />
-                                                                )}
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })
+                                                        <TableCell className="text-right px-4">
+                                                            {isEditing ? (
+                                                                <div className="flex justify-end gap-2">
+                                                                    <Button size="icon" variant="ghost" className="hover:bg-green-50 hover:text-green-600" onClick={() => handleSaveEdit(expense.id)}><Check className="h-4 w-4" /></Button>
+                                                                    <Button size="icon" variant="ghost" className="hover:bg-red-50 hover:text-red-600" onClick={handleCancelEdit}><X className="h-4 w-4" /></Button>
+                                                                </div>
+                                                            ) : (
+                                                                // === AQUÍ ESTÁ EL CAMBIO CLAVE: USAMOS EL COMPONENTE ActionMenu ===
+                                                                <ActionMenu
+                                                                    expense={expense}
+                                                                    onDetail={handleShowDetail}
+                                                                    onEdit={handleStartEdit}
+                                                                    onStatusChange={handleChangeStatus}
+                                                                />
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
                                         )}
                                     </TableBody>
                                 </table>
+                            </div>
+
+                            {/* PAGINATION CONTROLS */}
+                            <div className="flex items-center justify-end  p-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className=""
+                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Anterior
+                                </Button>
+                                <div className="text-sm font-medium px-4">
+                                    Página {currentPage} de {totalPages || 1}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className=""
+                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                >
+                                    Siguiente
+                                </Button>
                             </div>
                         </div>
                     </div>

@@ -80,7 +80,7 @@ export default function Header() {
 
                         <CNavItem>
                             <Link to="/app" style={{ textDecoration: "none" }}>
-                                <CNavLink active>Home</CNavLink>
+                                <CNavLink>Home</CNavLink>
                             </Link>
                         </CNavItem>
 

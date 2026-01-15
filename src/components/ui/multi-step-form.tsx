@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 
 const multiStepFormVariants = cva(
   "flex flex-col",
@@ -81,16 +81,22 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
             )}
           </div>
           <CardDescription>{description}</CardDescription>
-          <div className="flex items-center gap-4 pt-2">
-            <Progress
-              value={progressValue}
-              className="w-full"
-              indicatorClassName={cn(progressValue === 100 && "bg-green-500")}
-            />
-            <p className="text-sm text-muted-foreground whitespace-nowrap">
-              {progressText || `${currentStep}/${totalSteps} completed`}
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">
+              Progreso del registro
+            </p>
+
+            <p className="text-xs font-black text-primary uppercase tracking-tighter">
+              {progressText || `${progressValue}% Completado`}
             </p>
           </div>
+
+          {/* La barra de progreso debajo */}
+          <Progress
+            value={progressValue}
+            className="h-1 w-full"
+            indicatorClassName={cn(progressValue === 100 && "bg-green-500")}
+          />
         </CardHeader>
 
         <CardContent className="min-h-[300px] overflow-hidden">
