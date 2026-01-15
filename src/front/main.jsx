@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
+
 
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
@@ -12,6 +12,7 @@ import { BackendURL } from "./components/BackendURL";
 
 import "@coreui/coreui/dist/css/coreui.min.css";
 import "@coreui/icons/css/all.min.css";
+import "./index.css";
 
 const Main = () => {
 
