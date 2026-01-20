@@ -65,7 +65,7 @@ const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
                                 onClick={() => { onStatusChange(expense.id, STATUS.APROBADO); setIsOpen(false); }}
                                 className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
                             >
-                                <Check className="h-4 w-4" /> Aprobar
+                                <Check className="h-4 w-4" /> Pagado
                             </button>
                         )}
 

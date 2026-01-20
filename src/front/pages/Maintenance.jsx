@@ -57,7 +57,7 @@ const EXPENSE_COLUMNS = [
 /* =============================
    EXPENSE / GASTOS
 ============================= */
-const Expense = () => {
+const Maintenance = () => {
     // form state
     const [expenseDate, setExpenseDate] = useState(getTodayISO());
     const [amount, setAmount] = useState("");
@@ -579,4 +579,4 @@ const Expense = () => {
     );
 };
 
-export default Expense;
+export default Maintenance;
