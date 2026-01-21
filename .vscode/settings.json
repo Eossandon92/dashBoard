@@ -1,13 +1,16 @@
 {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "workbench.editorAssociations": {   
-        "*.md": "vscode.markdown.preview.editor"
-    },
-    "[javascriptreact]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
-    },
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
-    }
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "workbench.editorAssociations": {
+    "*.md": "vscode.markdown.preview.editor"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "vscode-pokemon.pokemonSize": "large",
+  "vscode-pokemon.position": "explorer",
+  "vscode-pokemon.theme": "forest"
 }

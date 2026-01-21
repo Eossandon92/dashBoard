@@ -216,7 +216,11 @@ class Expense(db.Model):
         db.ForeignKey("condominios.id"), 
         nullable=False
     ) 
-
+    maintenance_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("maintenances.id"), 
+        nullable=True
+    )
     category_id = db.Column(
         db.Integer,
         db.ForeignKey("expense_categories.id"),
@@ -248,10 +252,20 @@ class Expense(db.Model):
     provider = db.relationship("Provider")
     category = db.relationship("ExpenseCategory")
     condominium = db.relationship("Condominio") # Relación útil para acceder a datos del condominio desde el gasto
-    
+    maintenance = db.relationship("Maintenance", backref=db.backref("expense", uselist=False))
     # Relación con el estado
     status = db.relationship("ExpenseStatus")
-
+    def serialize(self):
+        return {
+        "id": self.id,
+        "amount": float(self.amount),
+        "expense_date": self.expense_date.isoformat(),
+        "provider_id": self.provider_id,
+        "maintenance_id": self.maintenance_id, # Clave para el front
+        "status": self.status.name if self.status else None,
+        "document_number": self.document_number,
+        "observation": self.observation
+    }
 
 
 class ExpenseDocument(db.Model):
@@ -284,7 +298,64 @@ class ExpenseStatus(db.Model):
     def __repr__(self):
         return f"<ExpenseStatus {self.name}>"
 
+class Maintenance(db.Model):
+    __tablename__ = "maintenances"
 
+    id = db.Column(db.Integer, primary_key=True)
+    
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Relaciones obligatorias
+    condominium_id = db.Column(db.Integer, db.ForeignKey("condominios.id"), nullable=False)
+    provider_id = db.Column(db.Integer, db.ForeignKey("providers.id"), nullable=False)
+    
+    # NUEVO: Relación con la tabla de estados que ya usas en Expenses
+    maintenance_status_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("expense_statuses.id"), 
+        nullable=False, 
+        default=1 # Asumiendo que 1 es 'Pendiente'
+    )
+    
+    # Control de tiempos y costos
+    scheduled_date = db.Column(db.Date, nullable=False)
+    completed_date = db.Column(db.Date, nullable=True)
+    
+    estimated_cost = db.Column(db.Numeric(10, 2), default=0.00)
+    actual_cost = db.Column(db.Numeric(10, 2), default=0.00)
+    
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    # Relaciones para fácil acceso
+    condominium = db.relationship("Condominio", backref="maintenances")
+    provider = db.relationship("Provider", backref="maintenances")
+    # Relación con el estado para obtener el nombre (ej: "Pagado", "Pendiente")
+    status = db.relationship("ExpenseStatus")
+
+    def __repr__(self):
+        # Ahora el status viene de la relación
+        status_name = self.status.name if self.status else "Sin Estado"
+        return f"<Maintenance {self.title} - {status_name}>"
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "condominium_id": self.condominium_id,
+            "provider_id": self.provider_id,
+            "provider_name": self.provider.name if self.provider else None,
+            "scheduled_date": self.scheduled_date.isoformat() if self.scheduled_date else None,
+            "completed_date": self.completed_date.isoformat() if self.completed_date else None,
+            "estimated_cost": float(self.estimated_cost),
+            "actual_cost": float(self.actual_cost),
+            # Enviamos tanto el ID como el Nombre para el Front-end
+            "status_id": self.maintenance_status_id,
+            "status_name": self.status.name if self.status else "Pendiente",
+            "has_expense": True if self.expense else False
+        }
+              
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"
 

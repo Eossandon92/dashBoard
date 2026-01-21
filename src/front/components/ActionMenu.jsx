@@ -1,18 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal, Eye, Pencil, Check, CircleX, Clock } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Check, CircleX, Clock, CreditCard } from 'lucide-react';
 
 const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
 
-    // Asegúrate que estos IDs coincidan con tu Base de Datos
+    // Mapeamos los IDs de tu tabla expense_statuses
     const STATUS = {
         PENDIENTE: 1,
-        APROBADO: 2,
+        APROBADO: 2, // En mantenciones lo usamos como PAGADO
         ANULADO: 3
     };
 
-    // Cerrar menú al hacer clic fuera
+    // TRUCO: Detectamos si viene de Gastos (expense_status_id) o Mantenciones (status_id)
+    const currentStatusId = expense.expense_status_id || expense.status_id;
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -35,9 +37,7 @@ const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
 
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-
                     <div className="py-1">
-                        {/* VER DETALLE */}
                         <button
                             onClick={() => { onDetail(expense); setIsOpen(false); }}
                             className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
@@ -45,8 +45,7 @@ const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
                             <Eye className="h-4 w-4 text-blue-500" /> Ver Detalle
                         </button>
 
-                        {/* EDITAR (Si no está anulado) */}
-                        {expense.expense_status_id !== STATUS.ANULADO && (
+                        {currentStatusId !== STATUS.ANULADO && currentStatusId !== STATUS.APROBADO && (
                             <button
                                 onClick={() => { onEdit(expense); setIsOpen(false); }}
                                 className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
@@ -59,28 +58,18 @@ const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
                     <div className="border-t border-slate-100"></div>
 
                     <div className="py-1">
-                        {/* APROBAR (Si está pendiente) */}
-                        {expense.expense_status_id === STATUS.PENDIENTE && (
+                        {/* BOTÓN DE PAGO: Aparece si está pendiente */}
+                        {currentStatusId === STATUS.PENDIENTE && (
                             <button
                                 onClick={() => { onStatusChange(expense.id, STATUS.APROBADO); setIsOpen(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
+                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 font-semibold"
                             >
-                                <Check className="h-4 w-4" /> Pagado
+                                <CreditCard className="h-4 w-4" /> Marcar como Pagada
                             </button>
                         )}
 
-                        {/* VOLVER A PENDIENTE (Si está aprobado) */}
-                        {expense.expense_status_id === STATUS.APROBADO && (
-                            <button
-                                onClick={() => { onStatusChange(expense.id, STATUS.PENDIENTE); setIsOpen(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-2"
-                            >
-                                <Clock className="h-4 w-4" /> Pendiente
-                            </button>
-                        )}
-
-                        {/* ANULAR (Si no está anulado) */}
-                        {expense.expense_status_id !== STATUS.ANULADO && (
+                        {/* ANULAR */}
+                        {currentStatusId !== STATUS.ANULADO && currentStatusId !== STATUS.APROBADO && (
                             <button
                                 onClick={() => { onStatusChange(expense.id, STATUS.ANULADO); setIsOpen(false); }}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -88,8 +77,9 @@ const ActionMenu = ({ expense, onDetail, onEdit, onStatusChange }) => {
                                 <CircleX className="h-4 w-4" /> Anular
                             </button>
                         )}
-                        {/* RESTAURAR (Si está anulado) */}
-                        {expense.expense_status_id === STATUS.ANULADO && (
+
+                        {/* RESTAURAR SI ESTÁ ANULADO */}
+                        {currentStatusId === STATUS.ANULADO && (
                             <button
                                 onClick={() => { onStatusChange(expense.id, STATUS.PENDIENTE); setIsOpen(false); }}
                                 className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
