@@ -59,6 +59,18 @@ export const Sidebar = () => {
                     </NavLink>
                 </li>
 
+                <li className="nav-item">
+                    <NavLink to="/app/requests"
+                        end
+                        className={({ isActive }) =>
+                            `nav-link ${isActive ? "active" : ""}`
+                        }
+                    >
+                        <i className="nav-icon cil-people"></i>
+                        Solicitudes
+                    </NavLink>
+                </li>
+
 
                 {/* Links externos se dejan con <a> */}
                 <li className="nav-item mt-auto">

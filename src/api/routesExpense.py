@@ -184,7 +184,7 @@ def get_expenses_by_condominium():
             "condominium_id": e.condominium_id,
             "amount": float(e.amount),
             "observation": e.observation,
-            "document_number": e.document_number,
+            "document_number": e.document_number if e.document_number else "S/N",
             "expense_date": e.expense_date.isoformat(),
             "status": e.status.name if e.status else "Pendiente",
             "expense_status_id": e.expense_status_id, # return ID for editing

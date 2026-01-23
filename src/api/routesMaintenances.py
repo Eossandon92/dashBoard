@@ -72,7 +72,8 @@ def pay_maintenance(id):
             expense_date=func.now(),
             amount=actual_amount,
             observation=f"Gasto automático de Mantención: {maintenance.title}",
-            expense_status_id=2 # Pagado
+            expense_status_id=2, # Pagado
+            document_number=data.get('document_number'),
         )
 
         # 3. Registrar en Auditoría

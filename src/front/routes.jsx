@@ -14,6 +14,7 @@ import AdminPanel from "./pages/AdminPanel";
 import { PrivateRoute } from "./PrivateRoute";
 import VignettePurchaseFormDemo from "./pages/Expense";
 import Maintenance from "./pages/Maintenance";
+import Requests from "./pages/Requests";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -30,6 +31,7 @@ export const router = createBrowserRouter(
           <Route path="admin-panel" element={<AdminPanel />} />
           <Route path="expense" element={<VignettePurchaseFormDemo />} />
           <Route path="maintenance" element={<Maintenance />} />
+          <Route path="requests" element={<Requests />} />
         </Route>
       </Route>
 
