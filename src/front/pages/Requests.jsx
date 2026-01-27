@@ -49,11 +49,16 @@ const REQUEST_COLUMNS = [
 const Requests = () => {
     // --- Estados del Formulario ---
     const [residentName, setResidentName] = useState("");
-    const [unitNumber, setUnitNumber] = useState(""); // Depto
+    const [unitNumber, setUnitNumber] = useState("");
     const [requestType, setRequestType] = useState("");
     const [subject, setSubject] = useState("");
     const [description, setDescription] = useState("");
     const [requestDate, setRequestDate] = useState(getTodayISO());
+
+    // --- NUEVO: Estados para Areas Comunes ---
+    const [commonAreas, setCommonAreas] = useState([]); // Lista de lugares
+    const [selectedAreaId, setSelectedAreaId] = useState(""); // Lugar seleccionado
+
     // --- Estados de la Tabla ---
     const [requests, setRequests] = useState([]);
     const [search, setSearch] = useState("");
@@ -64,32 +69,118 @@ const Requests = () => {
     const { user } = useAuth();
     const Icon = ClipboardList;
 
-    // --- Carga de Datos ---
+    // --- Carga de Datos (Solicitudes y Areas Comunes) ---
     useEffect(() => {
-        if (!user?.condominium_id) return;
-        // Asumiendo que crearás este endpoint en tu Flask
+        if (!user?.condominium_id) {
+            console.warn("No hay ID de condominio en el usuario");
+            return;
+        }
+
+        console.log("1. Buscando datos para condominio ID:", user.condominium_id);
+
+        // Cargar Areas Comunes
+        axios.get(`${backendUrl}/api/common-areas?condominio_id=${user.condominium_id}`)
+            .then(res => {
+                console.log("2. RESPUESTA DEL BACKEND:", res.data);
+
+                if (Array.isArray(res.data)) {
+                    setCommonAreas(res.data);
+                }
+                else if (res.data.results && Array.isArray(res.data.results)) {
+                    setCommonAreas(res.data.results);
+                }
+                else if (res.data.common_areas && Array.isArray(res.data.common_areas)) {
+                    setCommonAreas(res.data.common_areas);
+                }
+                else {
+                    console.error("El formato no es una lista válida:", res.data);
+                    setCommonAreas([]);
+                }
+            })
+            .catch(err => {
+                console.error("Error de conexión:", err);
+            });
+
         axios.get(`${backendUrl}/api/requests?condominio_id=${user.condominium_id}`)
-            .then(res => setRequests(res.data))
-            .catch(err => setRequests([]));
+            .then(res => setRequests(res.data));
+
     }, [user?.condominium_id, refresh]);
 
-    // --- Lógica de Envío ---
     const handleSubmit = async () => {
+        // 1. Validación rápida de campos obligatorios básicos
+        if (!residentName || !unitNumber || !requestType) {
+            alert("Faltan datos obligatorios");
+            return;
+        }
+
+        // ---------------------------------------------------------
+        // 2. VALIDACIÓN DE DISPONIBILIDAD (Evitar Doble Reserva)
+        // ---------------------------------------------------------
+        if (requestType === "Reserva") {
+            // A. Validar que haya seleccionado un área
+            if (!selectedAreaId) {
+                alert("Por favor selecciona un Espacio Común.");
+                return;
+            }
+
+            // B. Buscar conflictos en la lista de solicitudes existentes
+            const fechaOcupada = requests.some(req => {
+                // ¿Es el mismo lugar?
+                const mismoLugar = String(req.common_area_id) === String(selectedAreaId);
+
+                // ¿Es la misma fecha? (Manejamos si viene con hora o solo fecha)
+                // requestDate del input viene como "YYYY-MM-DD"
+                const fechaReq = req.request_date.split('T')[0];
+                const mismaFecha = fechaReq === requestDate;
+
+                // ¿Está activa? (Ignoramos las Rechazadas, asumiendo ID 3 = Rechazado)
+                const activa = req.status_id !== 3;
+
+                return mismoLugar && mismaFecha && activa;
+            });
+
+            if (fechaOcupada) {
+                alert("Lo sentimos, ese espacio ya está reservado para esa fecha.\nPor favor revisa la lista o elige otro día.");
+                return; // DETIENE EL ENVÍO AQUÍ
+            }
+        }
+        // ---------------------------------------------------------
+
         try {
+            // 3. Lógica para Asunto Automático
+            let finalSubject = subject;
+
+            // Si es Reserva, ignoramos lo que haya en 'subject' y usamos el nombre del lugar
+            if (requestType === "Reserva") {
+                const area = commonAreas.find(a => String(a.id) === String(selectedAreaId));
+                finalSubject = area ? `Reserva: ${area.name}` : "Nueva Reserva";
+            } else {
+                // Si no es reserva, el asunto manual es obligatorio
+                if (!subject) {
+                    alert("Debes escribir un Asunto.");
+                    return;
+                }
+            }
+
+            // 4. Enviar al Backend
             await axios.post(`${backendUrl}/api/requests`, {
                 condominium_id: user.condominium_id,
                 resident_name: residentName,
                 unit_number: unitNumber,
                 request_type: requestType,
-                subject: subject,
+                subject: finalSubject,
                 description: description,
                 request_date: requestDate,
-                status_id: 1 // Pendiente
+                status_id: 1, // 1 = Pendiente
+                common_area_id: requestType === "Reserva" ? selectedAreaId : null
             });
+
             alert("Solicitud registrada correctamente.");
             resetForm();
-            setRefresh(prev => prev + 1);
+            setRefresh(prev => prev + 1); // Recarga la tabla para ver la nueva reserva
+
         } catch (error) {
+            console.error("Error enviando:", error);
             alert("Error al registrar la solicitud.");
         }
     };
@@ -101,6 +192,7 @@ const Requests = () => {
         setSubject("");
         setDescription("");
         setRequestDate(getTodayISO());
+        setSelectedAreaId(""); // Resetear area
     };
 
     const handleStatusChange = async (req, statusId) => {
@@ -112,6 +204,21 @@ const Requests = () => {
         } catch (error) {
             alert("Error al actualizar el estado de la solicitud.");
         }
+    };
+
+    // --- Validación del Botón Siguiente ---
+    // Verificamos campos básicos Y si es reserva, que tenga area seleccionada
+    const isFormValid = () => {
+        // Validaciones básicas comunes
+        if (!residentName || !requestType) return false;
+
+        // Si es Reserva: Solo validamos que haya seleccionado un lugar
+        if (requestType === "Reserva") {
+            return !!selectedAreaId;
+        }
+
+        // Si NO es Reserva: El asunto es obligatorio
+        return !!subject;
     };
 
     // --- Filtros y Paginación ---
@@ -130,7 +237,27 @@ const Requests = () => {
     const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const progress = Math.round(([residentName, unitNumber, requestType, subject].filter(f => f).length / 4) * 100);
+    // --- FUNCIÓN: Verificar Disponibilidad ---
+    const checkAvailability = () => {
+        // Si no es reserva, no hay conflicto de fechas (un reclamo no ocupa espacio)
+        if (requestType !== "Reserva") return true;
 
+        // Buscamos si existe alguna solicitud que cumpla 3 condiciones:
+        const conflicto = requests.find(req =>
+            // 1. Que sea para el MISMO lugar
+            String(req.common_area_id) === String(selectedAreaId) &&
+
+            // 2. Que sea para la MISMA fecha (cortamos la parte de la hora 'T')
+            req.request_date.split('T')[0] === requestDate &&
+
+            // 3. Que NO esté Rechazada (ID 3). 
+            // Si está Pendiente (1) o Aprobada (2), el lugar está ocupado.
+            req.status_id !== 3
+        );
+
+        // Si encontramos conflicto, retornamos FALSE (No disponible)
+        return !conflicto;
+    };
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100vh-130px)] overflow-visible font-sans text-slate-900">
 
@@ -146,7 +273,7 @@ const Requests = () => {
                         progress={progress}
                         accentColor="violet"
                         icon={Icon}
-                        onNext={() => (residentName && subject) ? handleSubmit() : alert("Completa los campos obligatorios")}
+                        onNext={() => isFormValid() ? handleSubmit() : alert("Completa los campos obligatorios")}
                         nextButtonText="Registrar Solicitud"
                         fullWidthButton
                     >
@@ -165,7 +292,10 @@ const Requests = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Tipo de Solicitud *</Label>
-                                    <Select value={requestType} onValueChange={setRequestType}>
+                                    <Select value={requestType} onValueChange={(val) => {
+                                        setRequestType(val);
+                                        if (val !== "Reserva") setSelectedAreaId(""); // Limpiar si cambia tipo
+                                    }}>
                                         <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Reserva">Reserva Espacio</SelectItem>
@@ -181,10 +311,46 @@ const Requests = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Asunto / Título *</Label>
-                                <Input placeholder="Ej: Arriendo de Quincho" value={subject} onChange={e => setSubject(e.target.value)} />
-                            </div>
+                            {/* --- LOGICA CONDICIONAL: Solo aparece si es Reserva --- */}
+                            {requestType === "Reserva" && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <Label className="text-violet-600 font-semibold">Seleccionar Espacio Común *</Label>
+                                    <Select value={selectedAreaId} onValueChange={setSelectedAreaId}>
+                                        <SelectTrigger className="border-violet-200 bg-violet-50">
+                                            <SelectValue placeholder="Seleccione el lugar..." />
+                                        </SelectTrigger>
+
+                                        <SelectContent>
+                                            {/* VALIDACIÓN DE SEGURIDAD: */}
+                                            {/* Solo intentamos hacer map si commonAreas es realmente un array y tiene datos */}
+                                            {Array.isArray(commonAreas) && commonAreas.length > 0 ? (
+                                                commonAreas.map((area) => (
+                                                    <SelectItem key={area.id} value={String(area.id)}>
+                                                        {area.name}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                /* Si está vacío o cargando, mostramos esto para que no se rompa */
+                                                <SelectItem value="none" disabled>
+                                                    {Array.isArray(commonAreas) ? "No hay lugares disponibles" : "Cargando..."}
+                                                </SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {/* --- ESTE ES EL CAMBIO: Solo mostramos Asunto si NO es Reserva --- */}
+                            {requestType !== "Reserva" && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <Label>Asunto / Título *</Label>
+                                    <Input
+                                        placeholder="Ej: Ruidos molestos"
+                                        value={subject}
+                                        onChange={e => setSubject(e.target.value)}
+                                    />
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <Label>Descripción Detallada</Label>
@@ -201,7 +367,7 @@ const Requests = () => {
                 </div>
             </div>
 
-            {/* COLUMNA DERECHA: Tabla Violeta */}
+            {/* COLUMNA DERECHA: Tabla (Sin cambios mayores) */}
             <div className="w-full lg:w-[60%] h-full">
                 <div className="p-6 h-full flex flex-col overflow-hidden">
                     <div className="w-full rounded-md border border-l-4 border-l-violet-500 bg-background overflow-hidden flex flex-col flex-1 shadow-sm">
@@ -258,7 +424,7 @@ const Requests = () => {
                                                     <Badge className={cn(
                                                         "font-medium shadow-none border",
                                                         r.status_id === 1 && "bg-yellow-50 text-yellow-700 border-yellow-200",
-                                                        r.status_id === 2 && "bg-violet-50 text-violet-700 border-violet-200", // Aprobado/En Proceso
+                                                        r.status_id === 2 && "bg-violet-50 text-violet-700 border-violet-200",
                                                         r.status_id === 3 && "bg-red-50 text-red-700 border-red-200"
                                                     )}>
                                                         {r.status_name}
@@ -277,7 +443,7 @@ const Requests = () => {
                             </table>
                         </div>
 
-                        {/* Paginación Temática Violeta */}
+                        {/* Paginación */}
                         <div className="flex items-center justify-end p-4 border-t bg-slate-50/30">
                             <Button
                                 variant="outline" size="sm"

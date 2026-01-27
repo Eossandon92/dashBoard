@@ -158,6 +158,9 @@ class Condominio(db.Model):
     def __repr__(self):
         return f"<Condominio {self.nombre}>"
 
+# =====================================================
+# PROVIDER
+# =====================================================
 class Provider(db.Model):
     __tablename__ = "providers"
 
@@ -191,6 +194,9 @@ class Provider(db.Model):
             "created_at": self.created_at.isoformat()
         }
 
+# =====================================================
+# EXPENSE CATEGORY
+# =====================================================
 class ExpenseCategory(db.Model):
     __tablename__ = "expense_categories"
 
@@ -199,6 +205,9 @@ class ExpenseCategory(db.Model):
     description = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True)
 
+# =====================================================
+# EXPENSE
+# =====================================================
 class Expense(db.Model):
     __tablename__ = "expenses"
 
@@ -267,7 +276,9 @@ class Expense(db.Model):
         "observation": self.observation
     }
 
-
+# =====================================================
+# EXPENSE DOCUMENT
+# =====================================================
 class ExpenseDocument(db.Model):
     __tablename__ = "expense_documents"
 
@@ -286,7 +297,9 @@ class ExpenseDocument(db.Model):
 
     expense = db.relationship("Expense")
 
-
+# =====================================================
+# EXPENSE STATUS
+# =====================================================
 class ExpenseStatus(db.Model):
     __tablename__ = "expense_statuses"
 
@@ -298,6 +311,9 @@ class ExpenseStatus(db.Model):
     def __repr__(self):
         return f"<ExpenseStatus {self.name}>"
 
+# =====================================================
+# MAINTENANCE
+# =====================================================
 class Maintenance(db.Model):
     __tablename__ = "maintenances"
 
@@ -355,7 +371,74 @@ class Maintenance(db.Model):
             "status_name": self.status.name if self.status else "Pendiente",
             "has_expense": True if self.expense else False
         }
-              
+
+# =====================================================
+# REQUEST
+# =====================================================
+class Request(db.Model):
+    __tablename__ = 'requests'
+    id = db.Column(db.Integer, primary_key=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominios.id'), nullable=False)
+    
+    # Quién pide
+    resident_name = db.Column(db.String(100), nullable=False)
+    unit_number = db.Column(db.String(20), nullable=False) # Depto
+    
+    # Qué pide
+    request_type = db.Column(db.String(50), nullable=False) # "Reserva", "Reclamo", "Sugerencia"
+    # El lugar (Solo si es Reserva, por eso nullable=True)
+    common_area_id = db.Column(db.Integer, db.ForeignKey('common_areas.id'), nullable=True)
+    
+    subject = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text)
+    
+    # Cuándo
+    request_date = db.Column(db.Date, nullable=False) # Fecha del evento/solicitud
+    created_at = db.Column(db.DateTime, default=func.now())
+    
+    # Estado (1: Pendiente, 2: Aprobado/Ocupado, 3: Rechazado/Anulado)
+    status_id = db.Column(db.Integer, default=1)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "condominium_id": self.condominium_id,
+            "resident_name": self.resident_name,
+            "unit_number": self.unit_number,
+            "request_type": self.request_type,
+            "common_area_id": self.common_area_id,
+            "subject": self.subject,
+            "description": self.description,
+            "request_date": self.request_date.isoformat(),
+            "status_id": self.status_id,
+            "status_name": "Pendiente" if self.status_id == 1 else "Aprobado" if self.status_id == 2 else "Rechazado"
+        }
+# =====================================================
+# COMMON AREA
+# =====================================================
+class CommonArea(db.Model):
+    __tablename__ = 'common_areas'
+    id = db.Column(db.Integer, primary_key=True)
+    # Relación vital: ¿A qué condominio pertenece este quincho/sala?
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominios.id'), nullable=False)
+    
+    name = db.Column(db.String(100), nullable=False) # Ej: Quincho 1
+    description = db.Column(db.String(255))
+    price = db.Column(db.Integer, default=0) # Costo por uso
+    is_active = db.Column(db.Boolean, default=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "condominium_id": self.condominium_id,
+            "name": self.name,
+            "description": self.description,
+            "price": self.price,
+            "is_active": self.is_active
+        }
+# =====================================================
+# AUDIT LOG
+# =====================================================
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"
 

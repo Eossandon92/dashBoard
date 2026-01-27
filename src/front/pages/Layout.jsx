@@ -3,6 +3,7 @@ import ScrollToTop from "../components/ScrollToTop";
 import { Sidebar } from "../components/Sidebar";
 import { Footer } from "../components/Footer";
 import Header from "../components/Header";
+import FloatingCalculator from "../components/FloatingCalculator";
 
 export const Layout = () => {
     return (
@@ -20,6 +21,7 @@ export const Layout = () => {
                         <Outlet />
                     </main>
 
+                    <FloatingCalculator />
                 </div>
 
             </div>
