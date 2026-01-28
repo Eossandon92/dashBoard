@@ -205,7 +205,7 @@ const Maintenance = () => {
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Título de la Mantención *</Label>
-                                    <Input placeholder="Ej: Revisión Ascensor" value={title} onChange={e => setTitle(e.target.value)} />
+                                    <Input placeholder="Ej: Revisión Ascensor" value={title} onChange={e => setTitle(e.target.value)} className="focus-visible:ring-orange-500" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -219,7 +219,7 @@ const Maintenance = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Fecha Programada *</Label>
-                                        <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
+                                        <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="focus-visible:ring-orange-500" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -228,12 +228,12 @@ const Maintenance = () => {
                                         const val = e.target.value.replace(/\D/g, "");
                                         setEstimatedCost(val);
                                         setCostDisplay(val ? formatCLP(val) : "");
-                                    }} />
+                                    }} className="focus-visible:ring-orange-500" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Descripción / Notas</Label>
                                     <textarea
-                                        className="w-full min-h-[80px] rounded-md border border-slate-300 bg-[var(--body-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 hover:border-orange-400 transition-colors"
+                                        className="w-full min-h-[80px] rounded-md border border-slate-300 bg-[var(--body-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 hover:border-orange-500 transition-colors"
                                         style={{ resize: 'none' }}
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}

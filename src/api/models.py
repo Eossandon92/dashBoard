@@ -436,6 +436,78 @@ class CommonArea(db.Model):
             "price": self.price,
             "is_active": self.is_active
         }
+
+
+# =====================================================
+# VISIT
+# =====================================================
+
+
+class Visit(db.Model):
+    __tablename__ = 'visits'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominios.id'), nullable=False)
+    
+    # Datos de la Visita
+    visitor_name = db.Column(db.String(100), nullable=False)
+    visitor_rut = db.Column(db.String(20), nullable=True)     # Opcional
+    unit_number = db.Column(db.String(20), nullable=False)    # Depto destino
+    patent = db.Column(db.String(20), nullable=True)          # Patente (Opcional)
+    
+    # Tiempos
+    entry_time = db.Column(db.DateTime, default=datetime.now) # Se marca solo al crear
+    exit_time = db.Column(db.DateTime, nullable=True)         # Se llena al salir
+    
+    comment = db.Column(db.String(200), nullable=True)
+    
+    # Relación (Opcional, si quieres acceder a datos del condominio desde la visita)
+    # condominium = db.relationship('Condominium', backref='visits')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "condominium_id": self.condominium_id, # Importante devolverlo también
+            "visitor_name": self.visitor_name,
+            "visitor_rut": self.visitor_rut,
+            "unit_number": self.unit_number,
+            "patent": self.patent,
+            "entry_time": self.entry_time.isoformat() if self.entry_time else None,
+            "exit_time": self.exit_time.isoformat() if self.exit_time else None,
+            "is_active": self.exit_time is None, # Ayuda al frontend a saber si sigue dentro
+            "comment": self.comment
+        }
+
+class Delivery(db.Model):
+    __tablename__ = 'deliveries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    condominium_id = db.Column(db.Integer, db.ForeignKey('condominios.id'), nullable=False) # O el nombre que tengas
+    
+    # Datos simplificados
+    unit_number = db.Column(db.String(20), nullable=False)    # Depto 402
+    recipient_name = db.Column(db.String(100), nullable=True) # "Juan Pérez" (Opcional)
+    tracking_code = db.Column(db.String(100), nullable=True)  # Código etiqueta (Opcional)
+    
+    # Tiempos
+    arrival_time = db.Column(db.DateTime, default=datetime.now) 
+    pickup_time = db.Column(db.DateTime, nullable=True)         
+    
+    status = db.Column(db.String(20), default='pending') 
+    comment = db.Column(db.String(200), nullable=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "condominium_id": self.condominium_id,
+            "unit_number": self.unit_number,
+            "recipient_name": self.recipient_name,
+            "tracking_code": self.tracking_code,
+            "arrival_time": self.arrival_time.isoformat() if self.arrival_time else None,
+            "pickup_time": self.pickup_time.isoformat() if self.pickup_time else None,
+            "status": self.status,
+            "comment": self.comment
+        }
 # =====================================================
 # AUDIT LOG
 # =====================================================

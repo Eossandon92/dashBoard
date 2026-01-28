@@ -15,6 +15,8 @@ import { PrivateRoute } from "./PrivateRoute";
 import VignettePurchaseFormDemo from "./pages/Expense";
 import Maintenance from "./pages/Maintenance";
 import Requests from "./pages/Requests";
+import Visits from "./pages/Visit";
+import Delivery from "./pages/Delivery";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -32,6 +34,8 @@ export const router = createBrowserRouter(
           <Route path="expense" element={<VignettePurchaseFormDemo />} />
           <Route path="maintenance" element={<Maintenance />} />
           <Route path="requests" element={<Requests />} />
+          <Route path="visits" element={<Visits />} />
+          <Route path="delivery" element={<Delivery />} />
         </Route>
       </Route>
 

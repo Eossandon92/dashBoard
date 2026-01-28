@@ -96,6 +96,14 @@ const MultiStepForm = React.forwardRef(
         button: "bg-red-600 hover:bg-red-700",
         icon: "bg-red-100 text-red-600",
         text: "text-red-600"
+      },
+      // === AGREGAMOS AMBER (Por si acaso para urgencias) ===
+      amber: {
+        border: "border-t-4 border-t-amber-500",
+        progress: "bg-amber-500",
+        button: "bg-amber-600 hover:bg-amber-700",
+        icon: "bg-amber-100 text-amber-600",
+        text: "text-amber-600"
       }
     };
 

@@ -281,11 +281,13 @@ const Requests = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Nombre Residente *</Label>
-                                    <Input placeholder="Juan Pérez" value={residentName} onChange={e => setResidentName(e.target.value)} />
+                                    <Input placeholder="Juan Pérez" value={residentName} onChange={e => setResidentName(e.target.value)}
+                                        className="focus-visible:ring-violet-500" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>N° Unidad / Depto *</Label>
-                                    <Input placeholder="Ej: 402-B" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} />
+                                    <Input placeholder="Ej: 402-B" value={unitNumber} onChange={e => setUnitNumber(e.target.value)}
+                                        className="focus-visible:ring-violet-500" />
                                 </div>
                             </div>
 
@@ -307,7 +309,7 @@ const Requests = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Fecha</Label>
-                                    <Input type="date" value={requestDate} onChange={e => setRequestDate(e.target.value)} />
+                                    <Input type="date" value={requestDate} onChange={e => setRequestDate(e.target.value)} className="focus-visible:ring-violet-500" />
                                 </div>
                             </div>
 
@@ -315,7 +317,7 @@ const Requests = () => {
                             {requestType === "Reserva" && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <Label className="text-violet-600 font-semibold">Seleccionar Espacio Común *</Label>
-                                    <Select value={selectedAreaId} onValueChange={setSelectedAreaId}>
+                                    <Select value={selectedAreaId} onValueChange={setSelectedAreaId} className="focus-visible:ring-violet-500">
                                         <SelectTrigger className="border-violet-200 bg-violet-50">
                                             <SelectValue placeholder="Seleccione el lugar..." />
                                         </SelectTrigger>
@@ -348,6 +350,7 @@ const Requests = () => {
                                         placeholder="Ej: Ruidos molestos"
                                         value={subject}
                                         onChange={e => setSubject(e.target.value)}
+                                        className="focus-visible:ring-violet-500"
                                     />
                                 </div>
                             )}
@@ -355,7 +358,7 @@ const Requests = () => {
                             <div className="space-y-2">
                                 <Label>Descripción Detallada</Label>
                                 <textarea
-                                    className="w-full min-h-[100px] rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 transition-all outline-none"
+                                    className="w-full min-h-[100px] rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 transition-all outline-none"
                                     style={{ resize: 'none' }}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}

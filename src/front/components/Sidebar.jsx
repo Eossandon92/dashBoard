@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import "../index.css";
+import { Package, X, Check, Calendar, User, MapPin, Box, CheckCircle, Clock, Search, LogOut } from "lucide-react";
 
 export const Sidebar = () => {
     return (
@@ -66,8 +67,32 @@ export const Sidebar = () => {
                             `nav-link ${isActive ? "active" : ""}`
                         }
                     >
-                        <i className="nav-icon cil-people"></i>
+                        <i className="nav-icon cil-envelope-letter"></i>
                         Solicitudes
+                    </NavLink>
+                </li>
+
+                <li className="nav-item">
+                    <NavLink to="/app/visits"
+                        end
+                        className={({ isActive }) =>
+                            `nav-link ${isActive ? "active" : ""}`
+                        }
+                    >
+                        <i className="nav-icon cil-book"></i>
+                        Libro de Visitas
+                    </NavLink>
+                </li>
+
+                <li className="nav-item">
+                    <NavLink to="/app/delivery"
+                        end
+                        className={({ isActive }) =>
+                            `nav-link ${isActive ? "active" : ""}`
+                        }
+                    >
+                        <i className="nav-icon cil-bike"></i>
+                        Encomiendas
                     </NavLink>
                 </li>
 

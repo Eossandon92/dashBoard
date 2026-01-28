@@ -19,6 +19,8 @@ from api.routesProviders import providers_bp
 from api.routesExpense import expenses_bp
 from api.routesMaintenances import maintenances_bp
 from api.routesRequests import requests_bp
+from api.routesVisit import visits_bp
+from api.routesDelivery import deliveries_bp
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 
@@ -81,6 +83,8 @@ app.register_blueprint(providers_bp, url_prefix="/api")
 app.register_blueprint(expenses_bp, url_prefix="/api")
 app.register_blueprint(maintenances_bp, url_prefix="/api")
 app.register_blueprint(requests_bp, url_prefix="/api")
+app.register_blueprint(visits_bp, url_prefix="/api")
+app.register_blueprint(deliveries_bp, url_prefix="/api")
 
 # --------------------
 # Error handling

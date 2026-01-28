@@ -253,20 +253,20 @@ const Expense = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Fecha del gasto *</Label>
-                                        <Input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} required />
+                                        <Input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className="focus-visible:ring-emerald-500" required />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Monto *</Label>
-                                        <Input placeholder="$ 0" value={amountDisplay} onChange={handleAmountChange} required />
+                                        <Input placeholder="$ 0" value={amountDisplay} onChange={handleAmountChange} className="focus-visible:ring-emerald-500" required />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>N° Documento *</Label>
-                                        <Input placeholder="Ej: Factura 12345" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} required />
+                                        <Input placeholder="Ej: Factura 12345" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className="focus-visible:ring-emerald-500" required />
                                     </div>
                                     <div className="">
                                         <Label>Detalle *</Label>
                                         <textarea
-                                            className="w-full min-h-[100px] rounded-md border border-slate-300 bg-[var(--body-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 hover:border-slate-400 transition-colors"
+                                            className="w-full min-h-[100px] rounded-md border border-slate-300 bg-[var(--body-background)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 hover:border-emerald-500 transition-colors"
                                             style={{ resize: 'none' }}
                                             value={observation}
                                             onChange={(e) => setObservation(e.target.value)}
